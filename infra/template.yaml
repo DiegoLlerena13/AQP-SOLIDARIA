@@ -42,6 +42,16 @@ Resources:
             Path: /health
             Method: GET
   
+  
+  HealthLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub
+        - "/aws/lambda/${FunctionName}"
+        - FunctionName: !Ref HealthFunction
+      RetentionInDays: 14
+
+
   ProjectsTable:
     Type: AWS::DynamoDB::Table
     Properties:
