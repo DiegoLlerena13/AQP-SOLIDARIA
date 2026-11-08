@@ -112,3 +112,4 @@ export const ProjectStats: React.FC<Props> = ({ projects }) => {
     </section>
   );
 };
+

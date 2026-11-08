@@ -50,3 +50,4 @@ export const ErrorMessage: React.FC<Props> = ({ error, onRetry, className = '' }
     </div>
   );
 };
+

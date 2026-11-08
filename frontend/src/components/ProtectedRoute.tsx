@@ -50,3 +50,4 @@ export const ProtectedRoute: React.FC<Props> = ({ allowedRoles, children }) => {
 
   return <>{children}</>;
 };
+

@@ -44,3 +44,4 @@ export const SimulationNotice: React.FC<Props> = ({ variant = 'banner', classNam
     </aside>
   );
 };
+

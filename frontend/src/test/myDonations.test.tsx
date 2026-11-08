@@ -84,3 +84,4 @@ describe('HU-06 y HU-07 - Historial Propio y Simulación de Confirmación', () =
     ).toBeInTheDocument();
   });
 });
+

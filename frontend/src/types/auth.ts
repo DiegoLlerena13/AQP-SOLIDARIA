@@ -13,3 +13,4 @@ export interface AuthUser {
   roles: UserRole[];
   currentRole: UserRole;
 }
+

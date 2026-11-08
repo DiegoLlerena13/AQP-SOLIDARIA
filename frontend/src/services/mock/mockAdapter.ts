@@ -373,3 +373,4 @@ export const mockAdapter = {
     return [...auditEventsState].reverse();
   },
 };
+

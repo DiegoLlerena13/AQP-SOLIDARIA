@@ -74,3 +74,4 @@ export function extractRolesFromToken(claims: Record<string, unknown> | null): U
 
   return roles.length > 0 ? roles : ['DONANTE'];
 }
+

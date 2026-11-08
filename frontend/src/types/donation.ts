@@ -23,3 +23,4 @@ export interface CreateDonationDto {
 export interface SimulateDonationDto {
   action: 'CONFIRMAR' | 'RECHAZAR';
 }
+

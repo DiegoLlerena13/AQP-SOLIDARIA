@@ -92,3 +92,4 @@ pnpm run build
 # 4. Iniciar servidor de desarrollo local
 pnpm run dev
 ```
+

@@ -17,3 +17,4 @@ export class ApiError extends Error {
     this.requestId = data.requestId || 'req-local-undefined';
   }
 }
+

@@ -10,3 +10,4 @@ export const auditService = {
     return apiFetch<AuditEvent[]>('/v1/audit');
   },
 };
+

@@ -42,3 +42,4 @@ export function consumeTransientVerifier(): string | null {
   window.sessionStorage.removeItem(PKCE_VERIFIER_KEY);
   return verifier;
 }
+

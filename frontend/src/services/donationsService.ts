@@ -32,3 +32,4 @@ export const donationsService = {
     return apiFetch<Donation[]>('/v1/donations/me');
   },
 };
+

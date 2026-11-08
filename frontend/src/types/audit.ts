@@ -8,3 +8,4 @@ export interface AuditEvent {
   outcome: 'SUCCESS' | 'DENIED' | 'ERROR';
   details?: Record<string, unknown>;
 }
+

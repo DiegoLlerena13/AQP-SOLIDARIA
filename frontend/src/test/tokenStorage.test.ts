@@ -83,3 +83,4 @@ describe('tokenStorage - Seguridad Zero Trust en Navegador (CA-NF11.1)', () => {
     expect(tokenStorage.isAuthenticated()).toBe(false);
   });
 });
+

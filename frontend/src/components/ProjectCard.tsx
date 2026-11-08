@@ -112,3 +112,4 @@ export const ProjectCard: React.FC<Props> = ({ project, onDonateClick }) => {
     </article>
   );
 };
+

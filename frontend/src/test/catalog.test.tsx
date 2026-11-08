@@ -84,3 +84,4 @@ describe('HU-01 y HU-09 - Catálogo de Proyectos e Indicadores Agregados', () =>
     expect(screen.queryByText(/@epis.unsa.edu.pe/i)).not.toBeInTheDocument();
   });
 });
+

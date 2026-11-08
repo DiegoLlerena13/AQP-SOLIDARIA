@@ -32,3 +32,4 @@ export interface AggregateKpis {
   activeProjectsCount: number;
   confirmedDonationsCount: number;
 }
+
