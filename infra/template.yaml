@@ -5,10 +5,22 @@ Transform: AWS::Serverless-2016-10-31
 Description: AQP-SOLIDARIA - Infraestructura inicial
 
 Resources:
+  
   HealthApi:
     Type: AWS::Serverless::HttpApi
     Properties:
       StageName: academic
+      Auth:
+        Authorizers:
+          CognitoJwtAuthorizer:
+            IdentitySource: "$request.header.Authorization"
+            JwtConfiguration:
+              issuer: !Sub
+                - "https://cognito-idp.${AWS::Region}.amazonaws.com/${PoolId}"
+                - PoolId: !Ref DonationsUserPool
+              audience:
+                - !Ref DonationsAppClient
+
 
   HealthFunction:
     Type: AWS::Serverless::Function
@@ -17,8 +29,11 @@ Resources:
       Handler: handler.handler
       Runtime: nodejs22.x
       MemorySize: 128
-      Timeout: 5
-
+      Timeout: 5      
+      Policies: []
+      Environment:
+        Variables:
+          APP_ENV: academic
       Events:
         HealthEndpoint:
           Type: HttpApi
@@ -27,6 +42,87 @@ Resources:
             Path: /health
             Method: GET
   
+  
+  HealthLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub
+        - "/aws/lambda/${FunctionName}"
+        - FunctionName: !Ref HealthFunction
+      RetentionInDays: 14
+
+  
+  ListProjectsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/src/projects/
+      Handler: list.handler
+      Runtime: nodejs22.x
+      MemorySize: 128
+      Timeout: 10
+      Environment:
+        Variables:
+          PROJECTS_TABLE: !Ref ProjectsTable
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:Query
+              Resource:
+                - !GetAtt ProjectsTable.Arn
+                - !Sub '${ProjectsTable.Arn}/index/*'
+      Events:
+        ListProjects:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HealthApi
+            Path: /v1/projects
+            Method: GET
+
+  CreateDonationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/src/donations/
+      Handler: create.handler
+      Runtime: nodejs22.x
+      MemorySize: 128
+      Timeout: 15
+      Environment:
+        Variables:
+          PROJECTS_TABLE: !Ref ProjectsTable
+          DONATIONS_TABLE: !Ref DonationsTable
+          IDEMPOTENCY_TABLE: !Ref IdempotencyTable
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+              Resource:
+                - !GetAtt ProjectsTable.Arn
+                - !GetAtt IdempotencyTable.Arn
+            - Effect: Allow
+              Action:
+                - dynamodb:TransactWriteItems
+              Resource:
+                - !GetAtt ProjectsTable.Arn
+                - !GetAtt DonationsTable.Arn
+                - !GetAtt IdempotencyTable.Arn
+      Events:
+        CreateDonation:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HealthApi
+            Path: /v1/donations
+            Method: POST
+            Auth:
+              Authorizer: CognitoJwtAuthorizer
+              AuthorizationScopes:
+                - api/donations.write
+
+
   ProjectsTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -149,6 +245,52 @@ Resources:
     Properties:
       GroupName: AUDITOR
       UserPoolId: !Ref DonationsUserPool
+
+  
+  DonationsResourceServer:
+    Type: AWS::Cognito::UserPoolResourceServer
+    Properties:
+      UserPoolId: !Ref DonationsUserPool
+      Identifier: api
+      Name: AQP Solidaria API
+      Scopes:
+        - ScopeName: projects.write
+          ScopeDescription: Gestionar proyectos
+        - ScopeName: donations.write
+          ScopeDescription: Registrar donaciones
+        - ScopeName: donations.read
+          ScopeDescription: Consultar donaciones
+        - ScopeName: audit.read
+          ScopeDescription: Consultar auditoria
+
+  DonationsAppClient:
+    Type: AWS::Cognito::UserPoolClient
+    DependsOn: DonationsResourceServer
+    Properties:
+      UserPoolId: !Ref DonationsUserPool
+      ClientName: aqp-solidaria-web
+      GenerateSecret: false
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows:
+        - code
+      AllowedOAuthScopes:
+        - openid
+        - email
+        - api/projects.write
+        - api/donations.write
+        - api/donations.read
+        - api/audit.read
+      CallbackURLs:
+        - http://localhost:5173/callback
+      LogoutURLs:
+        - http://localhost:5173/
+      SupportedIdentityProviders:
+        - COGNITO
+      AccessTokenValidity: 15
+      TokenValidityUnits:
+        AccessToken: minutes
+      ExplicitAuthFlows:
+        - ALLOW_REFRESH_TOKEN_AUTH
 
 Outputs:
   HealthApiUrl:
