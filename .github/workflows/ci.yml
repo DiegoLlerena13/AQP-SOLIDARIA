@@ -6,6 +6,8 @@ on:
     branches:
       - main
       - feature/infra
+      - caracteristica/frontend
+      - feature/frontend
   pull_request:
     branches:
       - main
@@ -38,3 +40,34 @@ jobs:
 
       - name: Compilar infraestructura
         run: sam build --template-file infra/template.yaml --region us-east-1
+
+  validate-frontend:
+    name: Validar Frontend SPA (React + TypeScript + Vitest)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Instalar pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: '11'
+
+      - name: Instalar dependencias
+        run: pnpm install --frozen-lockfile
+
+      - name: Ejecutar pruebas unitarias y de seguridad (Vitest)
+        run: pnpm test
+
+      - name: Compilar frontend para producción (tsc + vite)
+        run: pnpm run build
+
