@@ -5,10 +5,22 @@ Transform: AWS::Serverless-2016-10-31
 Description: AQP-SOLIDARIA - Infraestructura inicial
 
 Resources:
+  
   HealthApi:
     Type: AWS::Serverless::HttpApi
     Properties:
       StageName: academic
+      Auth:
+        Authorizers:
+          CognitoJwtAuthorizer:
+            IdentitySource: "$request.header.Authorization"
+            JwtConfiguration:
+              issuer: !Sub
+                - "https://cognito-idp.${AWS::Region}.amazonaws.com/${PoolId}"
+                - PoolId: !Ref DonationsUserPool
+              audience:
+                - !Ref DonationsAppClient
+
 
   HealthFunction:
     Type: AWS::Serverless::Function
@@ -17,8 +29,11 @@ Resources:
       Handler: handler.handler
       Runtime: nodejs22.x
       MemorySize: 128
-      Timeout: 5
-
+      Timeout: 5      
+      Policies: []
+      Environment:
+        Variables:
+          APP_ENV: academic
       Events:
         HealthEndpoint:
           Type: HttpApi
@@ -149,6 +164,52 @@ Resources:
     Properties:
       GroupName: AUDITOR
       UserPoolId: !Ref DonationsUserPool
+
+  
+  DonationsResourceServer:
+    Type: AWS::Cognito::UserPoolResourceServer
+    Properties:
+      UserPoolId: !Ref DonationsUserPool
+      Identifier: api
+      Name: AQP Solidaria API
+      Scopes:
+        - ScopeName: projects.write
+          ScopeDescription: Gestionar proyectos
+        - ScopeName: donations.write
+          ScopeDescription: Registrar donaciones
+        - ScopeName: donations.read
+          ScopeDescription: Consultar donaciones
+        - ScopeName: audit.read
+          ScopeDescription: Consultar auditoria
+
+  DonationsAppClient:
+    Type: AWS::Cognito::UserPoolClient
+    DependsOn: DonationsResourceServer
+    Properties:
+      UserPoolId: !Ref DonationsUserPool
+      ClientName: aqp-solidaria-web
+      GenerateSecret: false
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows:
+        - code
+      AllowedOAuthScopes:
+        - openid
+        - email
+        - api/projects.write
+        - api/donations.write
+        - api/donations.read
+        - api/audit.read
+      CallbackURLs:
+        - http://localhost:5173/callback
+      LogoutURLs:
+        - http://localhost:5173/
+      SupportedIdentityProviders:
+        - COGNITO
+      AccessTokenValidity: 15
+      TokenValidityUnits:
+        AccessToken: minutes
+      ExplicitAuthFlows:
+        - ALLOW_REFRESH_TOKEN_AUTH
 
 Outputs:
   HealthApiUrl:
