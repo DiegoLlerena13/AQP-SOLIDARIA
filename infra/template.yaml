@@ -1,0 +1,158 @@
+
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Description: AQP-SOLIDARIA - Infraestructura inicial
+
+Resources:
+  HealthApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: academic
+
+  HealthFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/src/health/
+      Handler: handler.handler
+      Runtime: nodejs22.x
+      MemorySize: 128
+      Timeout: 5
+
+      Events:
+        HealthEndpoint:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HealthApi
+            Path: /health
+            Method: GET
+  
+  ProjectsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: aqp-solidaria-projects
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: projectId
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: projectId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: status-createdAt
+          KeySchema:
+            - AttributeName: status
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+  DonationsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: aqp-solidaria-donations
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: donationId
+          AttributeType: S
+        - AttributeName: donorSub
+          AttributeType: S
+        - AttributeName: createdAt
+          AttributeType: S
+      KeySchema:
+        - AttributeName: donationId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: donorSub-createdAt
+          KeySchema:
+            - AttributeName: donorSub
+              KeyType: HASH
+            - AttributeName: createdAt
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+  IdempotencyTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: aqp-solidaria-idempotency
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+      TimeToLiveSpecification:
+        AttributeName: expiresAt
+        Enabled: true
+
+  AuditEventsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: aqp-solidaria-audit
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: eventType
+          AttributeType: S
+        - AttributeName: eventKey
+          AttributeType: S
+      KeySchema:
+        - AttributeName: eventType
+          KeyType: HASH
+        - AttributeName: eventKey
+          KeyType: RANGE
+
+  
+  DonationsUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: aqp-solidaria-users
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 12
+          RequireLowercase: true
+          RequireUppercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+      MfaConfiguration: OPTIONAL
+      EnabledMfas:
+        - SOFTWARE_TOKEN_MFA
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+
+  DonorGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: DONANTE
+      UserPoolId: !Ref DonationsUserPool
+
+  ManagerGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: GESTOR
+      UserPoolId: !Ref DonationsUserPool
+
+  AuditorGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: AUDITOR
+      UserPoolId: !Ref DonationsUserPool
+
+Outputs:
+  HealthApiUrl:
+    Description: URL del endpoint de prueba
+    Value: !Sub
+      - "https://${ApiId}.execute-api.${AWS::Region}.amazonaws.com/academic/health"
+      - ApiId: !Ref HealthApi
