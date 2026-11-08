@@ -51,6 +51,77 @@ Resources:
         - FunctionName: !Ref HealthFunction
       RetentionInDays: 14
 
+  
+  ListProjectsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/src/projects/
+      Handler: list.handler
+      Runtime: nodejs22.x
+      MemorySize: 128
+      Timeout: 10
+      Environment:
+        Variables:
+          PROJECTS_TABLE: !Ref ProjectsTable
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:Query
+              Resource:
+                - !GetAtt ProjectsTable.Arn
+                - !Sub '${ProjectsTable.Arn}/index/*'
+      Events:
+        ListProjects:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HealthApi
+            Path: /v1/projects
+            Method: GET
+
+  CreateDonationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/src/donations/
+      Handler: create.handler
+      Runtime: nodejs22.x
+      MemorySize: 128
+      Timeout: 15
+      Environment:
+        Variables:
+          PROJECTS_TABLE: !Ref ProjectsTable
+          DONATIONS_TABLE: !Ref DonationsTable
+          IDEMPOTENCY_TABLE: !Ref IdempotencyTable
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+              Resource:
+                - !GetAtt ProjectsTable.Arn
+                - !GetAtt IdempotencyTable.Arn
+            - Effect: Allow
+              Action:
+                - dynamodb:TransactWriteItems
+              Resource:
+                - !GetAtt ProjectsTable.Arn
+                - !GetAtt DonationsTable.Arn
+                - !GetAtt IdempotencyTable.Arn
+      Events:
+        CreateDonation:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HealthApi
+            Path: /v1/donations
+            Method: POST
+            Auth:
+              Authorizer: CognitoJwtAuthorizer
+              AuthorizationScopes:
+                - api/donations.write
+
 
   ProjectsTable:
     Type: AWS::DynamoDB::Table
