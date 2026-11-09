@@ -12,7 +12,9 @@
  * - Wrapper de orden superior `withAuthz` para handlers de AWS Lambda.
  *
  * @guide Gua de integracin para el Integrante 3 (Backend):
- * 1. Envolver los handlers con `withAuthz({ roles, scopes }, async (event, principal) => { ... })`.
+ * 1. Envolver los handlers con `withAuthz({ roles, scopes }, async (event, principal) => { ... })`
+ *    o simplemente `withAuthz(async (event, principal) => { ... })` ya que ENDPOINT_POLICIES
+ *    infiere roles y scopes a partir del routeKey.
  * 2. Usar `principal.sub` directamente para asociar el recurso (`donorSub`), NUNCA leerlo del body.
  * 3. En operaciones sobre donaciones individuales (ej. `/simulate` o consultar donacin especfica),
  *    tras consultar DynamoDB llamar inmediatamente a `assertOwner(principal, donationItem)`.

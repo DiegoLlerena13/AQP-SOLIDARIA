@@ -5,6 +5,7 @@
  * (CA-04.3, CA-05.3), descartando datos no confiables de encabezados, query o body.
  */
 
+import type { APIGatewayProxyEventV2WithJWTAuthorizer } from 'aws-lambda';
 import { AuthzError } from './errors.js';
 
 export type Role = 'DONANTE' | 'GESTOR' | 'AUDITOR';
@@ -122,14 +123,16 @@ export function parseScopes(rawScopes: unknown): string[] {
 }
 
 /**
- * Obtiene el Principal autenticado a partir de un evento de API Gateway HTTP API v2.
+ * Obtiene el Principal autenticado a partir de un evento de API Gateway HTTP API v2 con JWT authorizer.
  * Lee exclusivamente de requestContext.authorizer.jwt.
  * Lanza AuthzError(401) si no hay claims verificados o si falta el claim `sub`.
  *
- * @param event Evento APIGatewayProxyEventV2
- * @returns Identidad verificada con sub, grupos vlidos, scopes y requestId
+ * @param event Evento APIGatewayProxyEventV2WithJWTAuthorizer o compatible
+ * @returns Identidad verificada con sub, grupos válidos, scopes y requestId
  */
-export function getPrincipal(event: any): Principal {
+export function getPrincipal(
+  event: APIGatewayProxyEventV2WithJWTAuthorizer | Record<string, unknown> | any
+): Principal {
   const authorizerJwt = event?.requestContext?.authorizer?.jwt;
   const claims = authorizerJwt?.claims;
   const requestId = event?.requestContext?.requestId || 'unknown';

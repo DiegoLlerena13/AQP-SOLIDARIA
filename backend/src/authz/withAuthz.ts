@@ -1,84 +1,161 @@
 /**
  * @file withAuthz.ts
  * @description Wrapper de orden superior (middleware) para handlers AWS Lambda.
- * Aplica la Capa 2 de autorizacin Zero Trust (Policy Engine) antes de delegar en la lgica de negocio:
- * 1. Extrae y valida la identidad (Principal) desde claims verificados (getPrincipal).
- * 2. Verifica los scopes exigidos (requireScope).
- * 3. Verifica los roles RBAC requeridos (requireRole).
- * 4. Pasa el principal autenticado directamente al handler.
- * 5. Captura AuthzError y genera respuestas uniformes { code, message, requestId }.
- * 6. Realiza logging estructurado y sanitizado (nunca registra tokens ni claims completos).
+ * Aplica la Capa 2 de autorizacin Zero Trust usando ENDPOINT_POLICIES como fuente de verdad:
+ * 1. Extrae routeKey del evento HTTP API v2 y busca la poltica en la matriz declarativa (Fail-Closed).
+ * 2. Si la ruta es pblica, deniega (403) por configuracin errnea (withAuthz solo aplica a rutas protegidas).
+ * 3. Aplica restriccin de stage (ej. simulate exclusivo para 'academic' usando event.requestContext.stage).
+ * 4. Extrae y valida la identidad (Principal) desde claims verificados (getPrincipal).
+ * 5. Verifica los scopes exigidos por la matriz y los opcionales adicionales (nunca relajan la matriz).
+ * 6. Verifica los roles RBAC requeridos por la matriz y los opcionales adicionales.
+ * 7. Pasa el principal autenticado directamente al handler.
+ * 8. Captura AuthzError y genera respuestas uniformes { code, message, requestId }.
+ * 9. Realiza logging estructurado y sanitizado con route y durationMs (nunca tokens, claims ni correo).
  */
 
+import type {
+  APIGatewayProxyEventV2WithJWTAuthorizer,
+  APIGatewayProxyResultV2
+} from 'aws-lambda';
 import { AuthzError, formatErrorResponse, type UniformResponse } from './errors.js';
+import { findPolicyByRouteKey } from './policy.js';
 import { getPrincipal, type Principal, type Role } from './principal.js';
 import { requireRole, requireScope } from './rbac.js';
 
 export interface WithAuthzOptions {
   /**
-   * Roles permitidos para acceder a este handler. El usuario debe poseer al menos uno.
+   * Roles permitidos adicionales para acceder a este handler. No pueden relajar la matriz.
    */
   roles?: Role[];
   /**
-   * Scopes OAuth2 requeridos para acceder a este handler. Todos los listados son exigidos.
+   * Scopes OAuth2 requeridos adicionales para acceder a este handler. No pueden relajar la matriz.
    */
   scopes?: string[];
 }
 
 /**
- * Tipo de funcin para los handlers que reciben el evento y el Principal autenticado.
+ * Tipo de función para los handlers que reciben el evento y el Principal autenticado.
  */
-export type AuthorizedHandler<TEvent = any, TResult = any> = (
+export type AuthorizedHandler<
+  TEvent = APIGatewayProxyEventV2WithJWTAuthorizer,
+  TResult = APIGatewayProxyResultV2
+> = (
   event: TEvent,
   principal: Principal
 ) => Promise<TResult>;
 
 /**
- * Envuelve un handler de Lambda con validaciones de autenticacin y autorizacin en Capa 2.
- *
- * @example
- * ```typescript
- * import { withAuthz, assertOwner } from '../authz/index.js';
- *
- * export const handler = withAuthz(
- *   { roles: ['DONANTE'], scopes: ['api/donations.write'] },
- *   async (event, principal) => {
- *     // Lgica de negocio aqu
- *     // donorSub garantizado desde principal.sub, nunca desde el body
- *     const donorSub = principal.sub;
- *     // ...
- *     return { statusCode: 200, body: JSON.stringify({ ok: true }) };
- *   }
- * );
- * ```
+ * Sobrecarga 1: withAuthz({ roles, scopes }, handler) - Firma original comunicada al Integrante 3.
  */
-export function withAuthz<TEvent = any>(
+export function withAuthz<
+  TEvent = APIGatewayProxyEventV2WithJWTAuthorizer,
+  TResult = APIGatewayProxyResultV2
+>(
   options: WithAuthzOptions,
-  handler: AuthorizedHandler<TEvent>
-): (event: TEvent) => Promise<UniformResponse | any> {
-  return async (event: TEvent): Promise<UniformResponse | any> => {
+  handler: AuthorizedHandler<TEvent, TResult>
+): (event: TEvent) => Promise<UniformResponse | TResult>;
+
+/**
+ * Sobrecarga 2: withAuthz(handler) - Opciones opcionales donde las reglas se derivan 100% de ENDPOINT_POLICIES.
+ */
+export function withAuthz<
+  TEvent = APIGatewayProxyEventV2WithJWTAuthorizer,
+  TResult = APIGatewayProxyResultV2
+>(
+  handler: AuthorizedHandler<TEvent, TResult>
+): (event: TEvent) => Promise<UniformResponse | TResult>;
+
+/**
+ * Implementación del wrapper withAuthz.
+ */
+export function withAuthz<
+  TEvent = APIGatewayProxyEventV2WithJWTAuthorizer,
+  TResult = APIGatewayProxyResultV2
+>(
+  optionsOrHandler: WithAuthzOptions | AuthorizedHandler<TEvent, TResult>,
+  maybeHandler?: AuthorizedHandler<TEvent, TResult>
+): (event: TEvent) => Promise<UniformResponse | TResult> {
+  const isFunction = typeof optionsOrHandler === 'function';
+  const handler = isFunction
+    ? (optionsOrHandler as AuthorizedHandler<TEvent, TResult>)
+    : maybeHandler!;
+  const explicitOptions: WithAuthzOptions = isFunction
+    ? {}
+    : (optionsOrHandler || {});
+
+  return async (event: TEvent): Promise<UniformResponse | TResult> => {
+    const startTime = Date.now();
     const requestId = (event as any)?.requestContext?.requestId || 'unknown';
 
+    // Resolver routeKey del evento HTTP API Payload v2
+    const routeKey: string =
+      (event as any)?.routeKey ||
+      (event as any)?.requestContext?.routeKey ||
+      ((event as any)?.requestContext?.http?.method &&
+      ((event as any)?.rawPath || (event as any)?.requestContext?.http?.path)
+        ? `${(event as any).requestContext.http.method} ${(event as any).rawPath || (event as any).requestContext.http.path}`
+        : 'UNKNOWN');
+
     try {
-      // 1. Extraer Principal de los claims verificados
+      // 1. Buscar la poltica en la matriz declarativa (Fail-Closed)
+      const policy = findPolicyByRouteKey(routeKey);
+
+      if (!policy) {
+        throw new AuthzError(
+          403,
+          'FORBIDDEN',
+          `Acceso denegado: ruta no autorizada por política (${routeKey})`
+        );
+      }
+
+      // 2. Si la ruta está catalogada como pública, el uso de withAuthz es una configuración errónea
+      if (policy.isPublic) {
+        throw new AuthzError(
+          403,
+          'FORBIDDEN',
+          `Configuración errónea: la ruta pública ${routeKey} no debe ser envuelta con withAuthz`
+        );
+      }
+
+      // 3. Restriccin de entorno/stage (ej. /simulate exclusivo para 'academic')
+      if (policy.stageRestriction) {
+        const stage = (event as any)?.requestContext?.stage || process.env.APP_ENV;
+        if (stage !== policy.stageRestriction) {
+          throw new AuthzError(
+            403,
+            'FORBIDDEN',
+            `Endpoint no disponible en este stage (requiere ${policy.stageRestriction})`
+          );
+        }
+      }
+
+      // 4. Extraer Principal de los claims verificados por el autorizador
       const principal = getPrincipal(event);
 
-      // 2. Validar scopes requeridos (defensa en profundidad frente al PEP de API Gateway)
-      if (options.scopes && options.scopes.length > 0) {
-        for (const scope of options.scopes) {
+      // 5. Validar scopes (los de la matriz son obligatorios; las opciones explcitas agregan requisitos)
+      if (policy.requiredScope) {
+        requireScope(principal, policy.requiredScope);
+      }
+      if (explicitOptions.scopes && explicitOptions.scopes.length > 0) {
+        for (const scope of explicitOptions.scopes) {
           requireScope(principal, scope);
         }
       }
 
-      // 3. Validar roles requeridos (RBAC)
-      if (options.roles && options.roles.length > 0) {
-        requireRole(principal, ...options.roles);
+      // 6. Validar roles RBAC (los de la matriz son obligatorios; las opciones explcitas agregan requisitos)
+      if (policy.requiredRole) {
+        requireRole(principal, policy.requiredRole);
+      }
+      if (explicitOptions.roles && explicitOptions.roles.length > 0) {
+        requireRole(principal, ...explicitOptions.roles);
       }
 
-      // 4. Delegar en la lgica de negocio pasando el principal verificado
+      // 7. Delegar en la lgica de negocio pasando el principal verificado
       return await handler(event, principal);
     } catch (error: unknown) {
-      // Registro seguro de auditora interna (sanitizado)
+      const durationMs = Date.now() - startTime;
+
+      // Registro seguro de auditora interna (sanitizado: nunca tokens, claims ni correo)
       if (error instanceof AuthzError) {
         console.warn(
           JSON.stringify({
@@ -86,7 +163,9 @@ export function withAuthz<TEvent = any>(
             event: 'AUTHZ_REJECTED',
             code: error.code,
             statusCode: error.status,
-            requestId
+            requestId,
+            route: routeKey,
+            durationMs
           })
         );
       } else {
@@ -95,7 +174,9 @@ export function withAuthz<TEvent = any>(
             level: 'ERROR',
             event: 'UNEXPECTED_HANDLER_ERROR',
             code: 'INTERNAL_SERVER_ERROR',
-            requestId
+            requestId,
+            route: routeKey,
+            durationMs
           })
         );
       }

@@ -97,6 +97,10 @@ export function matchesPath(pattern: string, path: string): boolean {
   const cleanPattern = pattern.replace(/\/+$/, '') || '/';
   const cleanPath = path.replace(/\/+$/, '') || '/';
 
+  if (cleanPattern === cleanPath) {
+    return true;
+  }
+
   const regexString = '^' + cleanPattern
     .replace(/\{[^}]+\}/g, '([^/]+)')
     .replace(/\//g, '\\/') + '$';
@@ -113,6 +117,23 @@ export function findPolicy(method: string, path: string): RoutePolicy | undefine
   return ENDPOINT_POLICIES.find(
     policy => policy.method === upperMethod && matchesPath(policy.pathPattern, path)
   );
+}
+
+/**
+ * Busca una poltica a partir del routeKey de API Gateway HTTP API v2
+ * (ej. "POST /v1/donations", "POST /v1/donations/{donationId}/simulate" o "POST /v1/donations/d-123/simulate").
+ */
+export function findPolicyByRouteKey(routeKey: string): RoutePolicy | undefined {
+  if (!routeKey || typeof routeKey !== 'string') {
+    return undefined;
+  }
+  const parts = routeKey.trim().split(/\s+/);
+  if (parts.length < 2) {
+    return undefined;
+  }
+  const method = parts[0];
+  const path = parts.slice(1).join(' ');
+  return findPolicy(method, path);
 }
 
 /**
