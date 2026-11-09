@@ -11,6 +11,8 @@ export interface MockEventOptions {
   rawClaims?: Record<string, unknown>;
   method?: string;
   path?: string;
+  routeKey?: string;
+  stage?: string;
   body?: unknown;
   headers?: Record<string, string>;
   requestId?: string;
@@ -18,9 +20,11 @@ export interface MockEventOptions {
 }
 
 export function createMockV2Event(options: MockEventOptions = {}) {
-  const method = options.method || 'GET';
-  const path = options.path || '/v1/projects';
+  const method = options.method || 'POST';
+  const path = options.path || '/v1/donations';
+  const routeKey = options.routeKey || `${method} ${path}`;
   const requestId = options.requestId || 'req-test-1234';
+  const stage = options.stage || 'academic';
 
   let claims: Record<string, unknown> | undefined = undefined;
 
@@ -51,7 +55,7 @@ export function createMockV2Event(options: MockEventOptions = {}) {
 
   return {
     version: '2.0',
-    routeKey: `${method} ${path}`,
+    routeKey,
     rawPath: path,
     rawQueryString: '',
     headers: {
@@ -72,8 +76,8 @@ export function createMockV2Event(options: MockEventOptions = {}) {
         userAgent: 'Mozilla/5.0'
       },
       requestId,
-      routeKey: `${method} ${path}`,
-      stage: 'academic',
+      routeKey,
+      stage,
       time: '09/Nov/2026:06:00:00 +0000',
       timeEpoch: 1794204000000,
       authorizer: options.omitJwt
