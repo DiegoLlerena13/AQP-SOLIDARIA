@@ -19,9 +19,11 @@ export const donationsService = {
     if (isUsingMock()) {
       return mockAdapter.simulateDonation(donationId, dto);
     }
+    // El backend Lambda espera action: "CONFIRM" o "REJECT"
+    const backendAction = action === 'CONFIRMAR' ? 'CONFIRM' : 'REJECT';
     return apiFetch<Donation>(`/v1/donations/${donationId}/simulate`, {
       method: 'POST',
-      body: JSON.stringify(dto),
+      body: JSON.stringify({ action: backendAction }),
     });
   },
 

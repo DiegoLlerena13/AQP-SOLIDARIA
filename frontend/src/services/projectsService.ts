@@ -7,7 +7,11 @@ export const projectsService = {
     if (isUsingMock()) {
       return mockAdapter.getProjects();
     }
-    return apiFetch<Project[]>('/v1/projects');
+    const data = await apiFetch<any[]>('/v1/projects');
+    return data.map((item) => ({
+      ...item,
+      title: item.title || item.name || 'Causa Social',
+    }));
   },
 
   async getAllProjectsForGestor(): Promise<Project[]> {
@@ -38,7 +42,10 @@ export const projectsService = {
     }
     return apiFetch<Project>('/v1/projects', {
       method: 'POST',
-      body: JSON.stringify(dto),
+      body: JSON.stringify({
+        ...dto,
+        name: dto.title,
+      }),
     });
   },
 
