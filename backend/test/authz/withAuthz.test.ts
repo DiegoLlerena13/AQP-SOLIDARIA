@@ -199,7 +199,7 @@ describe('withAuthz.ts - Wrapper HOF para Lambdas', () => {
     expect(resAuditor.statusCode).toBe(200);
   });
 
-  describe('Integración con ENDPOINT_POLICIES en tiempo de ejecución (Paso 2 y 3)', () => {
+  describe('Integración con ENDPOINT_POLICIES en tiempo de ejecución', () => {
     it('Ruta no listada en ENDPOINT_POLICIES -> responde 403 FORBIDDEN (Fail-closed)', async () => {
       const handler = withAuthz(async () => ({ statusCode: 200, body: 'ok' }));
       const eventNoListado = createMockV2Event({
