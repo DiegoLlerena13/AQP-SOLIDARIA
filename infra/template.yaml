@@ -121,6 +121,142 @@ Resources:
               Authorizer: CognitoJwtAuthorizer
               AuthorizationScopes:
                 - api/donations.write
+  
+  SimulateDonationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/src/donations/
+      Handler: simulate.handler
+      Runtime: nodejs22.x
+      MemorySize: 128
+      Timeout: 10
+      Environment:
+        Variables:
+          PROJECTS_TABLE: !Ref ProjectsTable
+          DONATIONS_TABLE: !Ref DonationsTable
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:UpdateItem
+              Resource:
+                - !GetAtt DonationsTable.Arn
+            - Effect: Allow
+              Action:
+                - dynamodb:UpdateItem
+              Resource:
+                - !GetAtt ProjectsTable.Arn
+            - Effect: Allow
+              Action:
+                - dynamodb:TransactWriteItems
+              Resource:
+                - !GetAtt ProjectsTable.Arn
+                - !GetAtt DonationsTable.Arn
+      Events:
+        SimulateDonation:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HealthApi
+            Path: /v1/donations/{donationId}/simulate
+            Method: POST
+            Auth:
+              Authorizer: CognitoJwtAuthorizer
+
+  GetMyDonationsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/src/donations/
+      Handler: me.handler
+      Runtime: nodejs22.x
+      MemorySize: 128
+      Timeout: 10
+      Environment:
+        Variables:
+          DONATIONS_TABLE: !Ref DonationsTable
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:Query
+              Resource:
+                - !GetAtt DonationsTable.Arn
+                - !Sub '${DonationsTable.Arn}/index/donorSub-createdAt'
+      Events:
+        GetMyDonations:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HealthApi
+            Path: /v1/donations/me
+            Method: GET
+            Auth:
+              Authorizer: CognitoJwtAuthorizer
+              AuthorizationScopes:
+                - api/donations.read
+
+  CreateProjectFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/src/projects/
+      Handler: create.handler
+      Runtime: nodejs22.x
+      MemorySize: 128
+      Timeout: 10
+      Environment:
+        Variables:
+          PROJECTS_TABLE: !Ref ProjectsTable
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+              Resource:
+                - !GetAtt ProjectsTable.Arn
+      Events:
+        CreateProject:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HealthApi
+            Path: /v1/projects
+            Method: POST
+            Auth:
+              Authorizer: CognitoJwtAuthorizer
+              AuthorizationScopes:
+                - api/projects.write
+
+  PublishProjectFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/src/projects/
+      Handler: publish.handler
+      Runtime: nodejs22.x
+      MemorySize: 128
+      Timeout: 10
+      Environment:
+        Variables:
+          PROJECTS_TABLE: !Ref ProjectsTable
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:UpdateItem
+              Resource:
+                - !GetAtt ProjectsTable.Arn
+      Events:
+        PublishProject:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HealthApi
+            Path: /v1/projects/{projectId}/publish
+            Method: POST
+            Auth:
+              Authorizer: CognitoJwtAuthorizer
+              AuthorizationScopes:
+                - api/projects.write
 
 
   ProjectsTable:
