@@ -156,3 +156,17 @@ Estos resultados evidencian que las políticas IAM del rol autorizan las operaci
 La evaluación se realizó sin incluir las políticas SCP de AWS Organizations. Por ello, los resultados demuestran el comportamiento de las políticas IAM simuladas, pero no sustituyen una prueba negativa real de ejecución.
 
 **Evidencia:** `evidence/infra/iam-projects-least-privilege.png`.
+
+### 5.2. Monitoreo de errores mediante CloudWatch y Amazon SNS
+
+Se configuraron dos alarmas de Amazon CloudWatch para supervisar las funciones `aqp-solidaria-health` y `aqp-solidaria-projects-list`.
+
+Ambas utilizan la métrica `Errors`, con estadística `Sum`, un periodo de cinco minutos y un umbral de al menos un error de ejecución.
+
+Las alarmas tienen acciones de notificación habilitadas mediante Amazon SNS, utilizando el tema `aqp-solidaria-alerts`. Se confirmó la suscripción por correo electrónico.
+
+Durante la verificación, la alarma de proyectos se encontraba en estado `OK`, mientras que la alarma Health mostraba datos insuficientes debido a la disponibilidad de métricas recientes.
+
+Esta configuración mejora la observabilidad del sistema y facilita la detección de errores operativos. La entrega efectiva de una notificación durante una condición de alarma todavía requiere validación.
+
+**Evidencia:** `evidence/infra/cloudwatch-alarms.png`.
