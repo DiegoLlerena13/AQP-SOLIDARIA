@@ -118,7 +118,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         sub,
         email,
         roles,
-        currentRole: roles[0] || 'DONANTE',
+        currentRole: roles[0] || 'VISITANTE',
       };
 
       tokenStorage.setAuth(tokens, authUser);

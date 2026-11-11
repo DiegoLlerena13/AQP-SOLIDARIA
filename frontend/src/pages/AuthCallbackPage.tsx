@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { LoadingSpinner } from '../components/LoadingSpinner';
@@ -10,46 +10,52 @@ export const AuthCallbackPage: React.FC = () => {
   const { handleAuthCallback } = useAuth();
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
+  const callbackPromiseRef = useRef<Promise<boolean> | null>(null);
 
-  useEffect(() => {
-    const code = searchParams.get('code');
-    const oauthError = searchParams.get('error_description') || searchParams.get('error');
+  
+useEffect(() => {
+  const code = searchParams.get('code');
+  const oauthError =
+    searchParams.get('error_description') || searchParams.get('error');
 
-    if (oauthError) {
-      setError(`Error recibido de Cognito: ${oauthError}`);
-      return;
-    }
+  if (oauthError) {
+    setError(`Error recibido de Cognito: ${oauthError}`);
+    return;
+  }
 
-    if (!code) {
-      setError('No se recibió el código de autorización en la respuesta de Cognito.');
-      return;
-    }
+  if (!code) {
+    setError('No se recibió el código de autorización en la respuesta de Cognito.');
+    return;
+  }
 
-    let isMounted = true;
+  let isMounted = true;
 
-    async function processCode() {
-      try {
-        const success = await handleAuthCallback(code!);
-        if (isMounted) {
-          if (success) {
-            navigate('/', { replace: true });
-          } else {
-            setError('Fallo al validar las credenciales OIDC con el servidor.');
-          }
-        }
-      } catch (err) {
-        if (isMounted) {
-          setError(err instanceof Error ? err.message : String(err));
-        }
+  // Reutilizar la misma promesa para evitar consumir PKCE dos veces.
+  if (!callbackPromiseRef.current) {
+    callbackPromiseRef.current = handleAuthCallback(code);
+  }
+
+  callbackPromiseRef.current
+    .then((success) => {
+      if (!isMounted) return;
+
+      if (success) {
+        navigate('/', { replace: true });
+      } else {
+        setError('Fallo al validar las credenciales OIDC con el servidor.');
       }
-    }
+    })
+    .catch((err) => {
+      if (isMounted) {
+        setError(err instanceof Error ? err.message : String(err));
+      }
+    });
 
-    processCode();
+  return () => {
+    isMounted = false;
+  };
+}, [searchParams, handleAuthCallback, navigate]);
 
-    return () => {
-      isMounted = false;
-    };
-  }, [searchParams, handleAuthCallback, navigate]);
 
   return (
     <div className="max-w-md mx-auto my-16 p-8 bg-white rounded-3xl border border-slate-200 shadow-sm text-center space-y-4">
