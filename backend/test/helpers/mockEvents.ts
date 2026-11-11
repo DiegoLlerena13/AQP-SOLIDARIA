@@ -30,6 +30,9 @@ export function createMockV2Event(options: MockEventOptions = {}) {
 
   if (!options.omitJwt) {
     claims = {
+      token_use: 'access',
+      client_id: '7ft2f51iags0qnirve0vocq5s9',
+      iss: 'https://cognito-idp.us-east-2.amazonaws.com/us-east-2_DH2KMafTU',
       ...(options.rawClaims || {})
     };
 
@@ -49,9 +52,9 @@ export function createMockV2Event(options: MockEventOptions = {}) {
   const jwt = options.omitJwt
     ? undefined
     : {
-        claims,
-        scopes: options.scopes
-      };
+      claims,
+      scopes: options.scopes
+    };
 
   return {
     version: '2.0',
@@ -83,8 +86,8 @@ export function createMockV2Event(options: MockEventOptions = {}) {
       authorizer: options.omitJwt
         ? undefined
         : {
-            jwt
-          }
+          jwt
+        }
     },
     body: options.body !== undefined
       ? (typeof options.body === 'string' ? options.body : JSON.stringify(options.body))

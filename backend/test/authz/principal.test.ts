@@ -248,13 +248,57 @@ describe('principal.ts - Extracción y Normalización de Identidad', () => {
     it('extrae client_id y requestId correctamente', () => {
       const event = createMockV2Event({
         sub: 'user-sub-abc',
-        clientId: 'app-client-xyz-789',
+        clientId: '7ft2f51iags0qnirve0vocq5s9',
         requestId: 'req-aws-999'
       });
 
       const principal = getPrincipal(event);
-      expect(principal.clientId).toBe('app-client-xyz-789');
+      expect(principal.clientId).toBe('7ft2f51iags0qnirve0vocq5s9');
       expect(principal.requestId).toBe('req-aws-999');
+    });
+
+        it('[CA-03.2] fail-closed: sin COGNITO_CLIENT_ID o COGNITO_USER_POOL_ID responde 401', () => {
+      const savedClient = process.env.COGNITO_CLIENT_ID;
+      const savedPool = process.env.COGNITO_USER_POOL_ID;
+      try {
+        delete process.env.COGNITO_CLIENT_ID;
+        delete process.env.COGNITO_USER_POOL_ID;
+
+        const event = createMockV2Event({ sub: 'usr-123', groups: ['DONANTE'] });
+
+        expect(() => getPrincipal(event)).toThrow(AuthzError);
+        try {
+          getPrincipal(event);
+        } catch (err: any) {
+          expect(err.status).toBe(401);
+          expect(err.message).toContain('Configuración de seguridad incompleta');
+        }
+      } finally {
+        process.env.COGNITO_CLIENT_ID = savedClient;
+        process.env.COGNITO_USER_POOL_ID = savedPool;
+      }
+    });
+
+    it('[CA-03.2] rechaza token sin el claim token_use (fail-closed)', () => {
+      const event = createMockV2Event({
+        sub: 'usr-123',
+        groups: ['DONANTE'],
+        rawClaims: { token_use: undefined }
+      });
+
+      expect(() => getPrincipal(event)).toThrow(AuthzError);
+    });
+
+    it('[CA-03.2] rechaza iss con el pool correcto como subcadena pero emisor distinto (sin includes)', () => {
+      const event = createMockV2Event({
+        sub: 'usr-123',
+        groups: ['DONANTE'],
+        rawClaims: {
+          iss: 'https://evil.example.com/us-east-2_DH2KMafTU'
+        }
+      });
+
+      expect(() => getPrincipal(event)).toThrow(AuthzError);
     });
   });
 });
