@@ -115,6 +115,9 @@ Resources:
           PROJECTS_TABLE: !Ref ProjectsTable
           DONATIONS_TABLE: !Ref DonationsTable
           IDEMPOTENCY_TABLE: !Ref IdempotencyTable
+          COGNITO_USER_POOL_ID: !Ref DonationsUserPool
+          COGNITO_CLIENT_ID: !Ref DonationsAppClient
+          APP_ENV: academic
       Policies:
         - Version: '2012-10-17'
           Statement:
@@ -155,6 +158,9 @@ Resources:
         Variables:
           PROJECTS_TABLE: !Ref ProjectsTable
           DONATIONS_TABLE: !Ref DonationsTable
+          COGNITO_USER_POOL_ID: !Ref DonationsUserPool
+          COGNITO_CLIENT_ID: !Ref DonationsAppClient
+          APP_ENV: academic
       Policies:
         - Version: '2012-10-17'
           Statement:
@@ -198,6 +204,9 @@ Resources:
       Environment:
         Variables:
           DONATIONS_TABLE: !Ref DonationsTable
+          COGNITO_USER_POOL_ID: !Ref DonationsUserPool
+          COGNITO_CLIENT_ID: !Ref DonationsAppClient
+          APP_ENV: academic
       Policies:
         - Version: '2012-10-17'
           Statement:
@@ -230,6 +239,9 @@ Resources:
       Environment:
         Variables:
           PROJECTS_TABLE: !Ref ProjectsTable
+          COGNITO_USER_POOL_ID: !Ref DonationsUserPool
+          COGNITO_CLIENT_ID: !Ref DonationsAppClient
+          APP_ENV: academic
       Policies:
         - Version: '2012-10-17'
           Statement:
@@ -261,6 +273,9 @@ Resources:
       Environment:
         Variables:
           PROJECTS_TABLE: !Ref ProjectsTable
+          COGNITO_USER_POOL_ID: !Ref DonationsUserPool
+          COGNITO_CLIENT_ID: !Ref DonationsAppClient
+          APP_ENV: academic
       Policies:
         - Version: '2012-10-17'
           Statement:
@@ -466,6 +481,22 @@ Resources:
         - ALLOW_USER_SRP_AUTH # SEC: Autenticación segura basada en SRP para la SPA
 
 Outputs:
+  UserPoolId:
+    Description: Identificador del User Pool de Cognito
+    Value: !Ref DonationsUserPool
+
+  AppClientId:
+    Description: Client ID de la aplicacion en Cognito
+    Value: !Ref DonationsAppClient
+
+  CognitoAuthDomain:
+    Description: Dominio de autenticacion Hosted UI / OAuth2
+    Value: !Sub "https://${CognitoDomainPrefix}.auth.${AWS::Region}.amazoncognito.com"
+
+  ApiBaseUrl:
+    Description: URL base del API Gateway HTTP API
+    Value: !Sub "https://${HealthApi}.execute-api.${AWS::Region}.amazonaws.com/academic"
+
   HealthApiUrl:
     Description: URL del endpoint de prueba
     Value: !Sub

@@ -138,12 +138,17 @@ export function getPrincipal(
   const requestId = event?.requestContext?.requestId || 'unknown';
 
   if (!claims || typeof claims !== 'object') {
-    throw new AuthzError(401, 'UNAUTHORIZED', 'Autenticacin requerida: token ausente o invlido');
+    throw new AuthzError(401, 'UNAUTHORIZED', 'Autenticacion requerida: token ausente o invalido');
+  }
+
+  // CA-03.2: Exigir access token. Si el token recibido tiene token_use explicito y no es 'access', rechazar
+  if (claims.token_use && claims.token_use !== 'access') {
+    throw new AuthzError(401, 'UNAUTHORIZED', 'Token invalido: se requiere un access token, no un ID token');
   }
 
   const rawSub = claims.sub;
   if (!rawSub || typeof rawSub !== 'string' || rawSub.trim().length === 0) {
-    throw new AuthzError(401, 'UNAUTHORIZED', 'Claim sub ausente o invlido en el token');
+    throw new AuthzError(401, 'UNAUTHORIZED', 'Claim sub ausente o invalido en el token');
   }
 
   const sub = rawSub.trim();
@@ -155,7 +160,19 @@ export function getPrincipal(
 
   const clientId = typeof claims.client_id === 'string'
     ? claims.client_id.trim()
-    : undefined;
+    : (typeof claims.aud === 'string' ? claims.aud.trim() : undefined);
+
+  // CA-03.2: Si se configura COGNITO_CLIENT_ID en el entorno, validar coincidencia (defensa en profundidad)
+  const expectedClientId = process.env.COGNITO_CLIENT_ID;
+  if (expectedClientId && clientId && clientId !== expectedClientId) {
+    throw new AuthzError(401, 'UNAUTHORIZED', 'Token emitido para un client_id no autorizado');
+  }
+
+  // CA-03.2: Si se configura COGNITO_USER_POOL_ID en el entorno, validar el emisor (iss)
+  const expectedPoolId = process.env.COGNITO_USER_POOL_ID;
+  if (expectedPoolId && typeof claims.iss === 'string' && !claims.iss.includes(expectedPoolId)) {
+    throw new AuthzError(401, 'UNAUTHORIZED', 'Token emitido por un User Pool no autorizado');
+  }
 
   return {
     sub,

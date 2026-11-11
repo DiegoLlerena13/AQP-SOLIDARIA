@@ -1,31 +1,25 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { randomUUID } from "crypto";
+import { withAuthz, type Principal } from "../authz/index.js";
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
 
-export const handler = async (event: any) => {
-  // 1. Autorización (Zero Trust) - Exclusivo para rol GESTOR
-  const claims = event.requestContext?.authorizer?.jwt?.claims;
-  const groups = claims?.["cognito:groups"];
-  const roles = Array.isArray(groups) ? groups : typeof groups === "string" ? groups.split(/[,\s]+/).filter(Boolean) : [];
-  const userSub = claims?.sub;
-
-  if (!userSub) {
-    return { statusCode: 401, body: JSON.stringify({ code: "UNAUTHORIZED", message: "Autenticación requerida" }) };
-  }
-
-  if (!roles.includes("GESTOR")) {
-    return { statusCode: 403, body: JSON.stringify({ code: "FORBIDDEN", message: "Solo los gestores pueden crear proyectos" }) };
-  }
+export const handler = withAuthz(async (event: any, principal: Principal) => {
+  // 1. Autorización verificada por withAuthz - Exclusivo para rol GESTOR (CA-04.1, CA-08.1)
+  const userSub = principal.sub;
 
   // 2. Extraer y validar el cuerpo de la petición
-  const body = event.body ? JSON.parse(event.body) : {};
+  const body = event.body ? (typeof event.body === 'string' ? JSON.parse(event.body) : event.body) : {};
   const { name, description, goalAmountCents } = body;
 
   if (!name || !description || typeof goalAmountCents !== "number" || goalAmountCents <= 0) {
-    return { statusCode: 400, body: JSON.stringify({ code: "BAD_REQUEST", message: "Datos de proyecto inválidos o incompletos" }) };
+    return {
+      statusCode: 400,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: "BAD_REQUEST", message: "Datos de proyecto inválidos o incompletos" })
+    };
   }
 
   // 3. Preparar el registro inicial del proyecto
@@ -61,8 +55,12 @@ export const handler = async (event: any) => {
         projectId: projectId
       })
     };
-  } catch (error) {
-    console.error("Error creando proyecto:", error);
-    return { statusCode: 500, body: JSON.stringify({ code: "INTERNAL_SERVER_ERROR", message: "Error al crear el proyecto" }) };
+  } catch (error: any) {
+    console.error("Error guardando proyecto:", error);
+    return {
+      statusCode: 500,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: "INTERNAL_SERVER_ERROR", message: "Error interno al crear el proyecto" })
+    };
   }
-};
+});
