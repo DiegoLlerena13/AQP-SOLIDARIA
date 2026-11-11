@@ -1,8 +1,24 @@
-
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 
 Description: AQP-SOLIDARIA - Infraestructura inicial
+
+Parameters:
+  # SEC: Prefijo único para el dominio de Cognito (Hosted UI / PKCE)
+  CognitoDomainPrefix:
+    Type: String
+    Description: Prefijo único global para el dominio de Cognito Hosted UI
+    Default: aqp-solidaria-auth
+  # SEC: URL de retorno parametrizada para local y CloudFront
+  CallbackUrl:
+    Type: String
+    Description: URL de callback autorizada tras autenticación OIDC
+    Default: http://localhost:5173/callback
+  # SEC: URL de cierre de sesión parametrizada
+  LogoutUrl:
+    Type: String
+    Description: URL de redirección tras cierre de sesión
+    Default: http://localhost:5173/
 
 Resources:
   
@@ -11,6 +27,7 @@ Resources:
     Properties:
       StageName: academic
       Auth:
+        DefaultAuthorizer: CognitoJwtAuthorizer # SEC: Fail-closed por defecto (todas las rutas protegidas a menos que se indique NONE)
         Authorizers:
           CognitoJwtAuthorizer:
             IdentitySource: "$request.header.Authorization"
@@ -41,6 +58,8 @@ Resources:
             ApiId: !Ref HealthApi
             Path: /health
             Method: GET
+            Auth: # SEC: Endpoint de salud público desprovisto de autorizador
+              Authorizer: NONE
   
   
   HealthLogGroup:
@@ -80,6 +99,8 @@ Resources:
             ApiId: !Ref HealthApi
             Path: /v1/projects
             Method: GET
+            Auth: # SEC: Catálogo público de proyectos confirmados
+              Authorizer: NONE
 
   CreateDonationFunction:
     Type: AWS::Serverless::Function
@@ -121,6 +142,144 @@ Resources:
               Authorizer: CognitoJwtAuthorizer
               AuthorizationScopes:
                 - api/donations.write
+  
+  SimulateDonationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/src/donations/
+      Handler: simulate.handler
+      Runtime: nodejs22.x
+      MemorySize: 128
+      Timeout: 10
+      Environment:
+        Variables:
+          PROJECTS_TABLE: !Ref ProjectsTable
+          DONATIONS_TABLE: !Ref DonationsTable
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:GetItem
+                - dynamodb:UpdateItem
+              Resource:
+                - !GetAtt DonationsTable.Arn
+            - Effect: Allow
+              Action:
+                - dynamodb:UpdateItem
+              Resource:
+                - !GetAtt ProjectsTable.Arn
+            - Effect: Allow
+              Action:
+                - dynamodb:TransactWriteItems
+              Resource:
+                - !GetAtt ProjectsTable.Arn
+                - !GetAtt DonationsTable.Arn
+      Events:
+        SimulateDonation:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HealthApi
+            Path: /v1/donations/{donationId}/simulate
+            Method: POST
+            Auth:
+              Authorizer: CognitoJwtAuthorizer
+              AuthorizationScopes: # SEC: Scope requerido según design.md §4
+                - api/donations.write
+
+  GetMyDonationsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/src/donations/
+      Handler: me.handler
+      Runtime: nodejs22.x
+      MemorySize: 128
+      Timeout: 10
+      Environment:
+        Variables:
+          DONATIONS_TABLE: !Ref DonationsTable
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:Query
+              Resource:
+                - !GetAtt DonationsTable.Arn
+                - !Sub '${DonationsTable.Arn}/index/donorSub-createdAt'
+      Events:
+        GetMyDonations:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HealthApi
+            Path: /v1/donations/me
+            Method: GET
+            Auth:
+              Authorizer: CognitoJwtAuthorizer
+              AuthorizationScopes:
+                - api/donations.read
+
+  CreateProjectFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/src/projects/
+      Handler: create.handler
+      Runtime: nodejs22.x
+      MemorySize: 128
+      Timeout: 10
+      Environment:
+        Variables:
+          PROJECTS_TABLE: !Ref ProjectsTable
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:PutItem
+              Resource:
+                - !GetAtt ProjectsTable.Arn
+      Events:
+        CreateProject:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HealthApi
+            Path: /v1/projects
+            Method: POST
+            Auth:
+              Authorizer: CognitoJwtAuthorizer
+              AuthorizationScopes:
+                - api/projects.write
+
+  PublishProjectFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../backend/src/projects/
+      Handler: publish.handler
+      Runtime: nodejs22.x
+      MemorySize: 128
+      Timeout: 10
+      Environment:
+        Variables:
+          PROJECTS_TABLE: !Ref ProjectsTable
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - dynamodb:UpdateItem
+              Resource:
+                - !GetAtt ProjectsTable.Arn
+      Events:
+        PublishProject:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HealthApi
+            Path: /v1/projects/{projectId}/publish
+            Method: POST
+            Auth:
+              Authorizer: CognitoJwtAuthorizer
+              AuthorizationScopes:
+                - api/projects.write
 
 
   ProjectsTable:
@@ -228,6 +387,13 @@ Resources:
           - Name: verified_email
             Priority: 1
 
+  # SEC: Dominio administrado de Cognito para Authorization Code + PKCE y Hosted UI
+  DonationsUserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Ref CognitoDomainPrefix
+      UserPoolId: !Ref DonationsUserPool
+
   DonorGroup:
     Type: AWS::Cognito::UserPoolGroup
     Properties:
@@ -270,9 +436,11 @@ Resources:
       UserPoolId: !Ref DonationsUserPool
       ClientName: aqp-solidaria-web
       GenerateSecret: false
+      EnableTokenRevocation: true # SEC: Habilita revocación de refresh tokens en /oauth2/revoke (CA-03.3)
+      PreventUserExistenceErrors: ENABLED # SEC: Previene ataques de enumeración de usuarios
       AllowedOAuthFlowsUserPoolClient: true
       AllowedOAuthFlows:
-        - code
+        - code # SEC: Authorization Code + PKCE obligatorio (sin flujo implícito, CA-03.1)
       AllowedOAuthScopes:
         - openid
         - email
@@ -280,17 +448,22 @@ Resources:
         - api/donations.write
         - api/donations.read
         - api/audit.read
-      CallbackURLs:
-        - http://localhost:5173/callback
-      LogoutURLs:
-        - http://localhost:5173/
+      CallbackURLs: # SEC: Parametrizado para soportar entorno local y CloudFront
+        - !Ref CallbackUrl
+      LogoutURLs: # SEC: Parametrizado para soportar entorno local y CloudFront
+        - !Ref LogoutUrl
       SupportedIdentityProviders:
         - COGNITO
-      AccessTokenValidity: 15
-      TokenValidityUnits:
+      AccessTokenValidity: 15 # SEC: Vigencia de 15 minutos según CA-03.3
+      IdTokenValidity: 15 # SEC: Vigencia explícita de ID token alineada a 15 min
+      RefreshTokenValidity: 30 # SEC: Vigencia explícita de refresh token (30 días)
+      TokenValidityUnits: # SEC: Unidades de tiempo explícitas para tokens
         AccessToken: minutes
+        IdToken: minutes
+        RefreshToken: days
       ExplicitAuthFlows:
         - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_SRP_AUTH # SEC: Autenticación segura basada en SRP para la SPA
 
 Outputs:
   HealthApiUrl:
