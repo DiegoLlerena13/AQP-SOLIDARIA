@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { isCognitoConfigured } from '../auth/cognitoConfig';
+import { isUsingMock } from '../services/apiClient';
 import { UserRole } from '../types/auth';
 import {
   Shield,
@@ -11,6 +12,8 @@ import {
   Users,
   AlertTriangle,
   ArrowRight,
+  Cloud,
+  FlaskConical,
 } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
@@ -19,6 +22,7 @@ export const LoginPage: React.FC = () => {
   const [cognitoError, setCognitoError] = useState<string | null>(null);
 
   const cognitoReady = isCognitoConfigured();
+  const mockMode = isUsingMock();
 
   const handleCognitoClick = async () => {
     setCognitoError(null);
@@ -42,6 +46,23 @@ export const LoginPage: React.FC = () => {
 
   return (
     <div className="max-w-3xl mx-auto py-8 space-y-8 animate-in fade-in duration-300">
+      {/* Banner: modo AWS real vs. simulación */}
+      {mockMode ? (
+        <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-2xl text-amber-900 text-xs font-medium">
+          <FlaskConical className="w-4 h-4 text-amber-600 shrink-0" aria-hidden="true" />
+          <span>
+            <strong>Modo Simulación Local (mocks)</strong> — Los datos son ficticios.
+            Para conectar a AWS configura <code className="bg-amber-100 px-1 rounded">VITE_USE_MOCK=false</code> en tu <code className="bg-amber-100 px-1 rounded">.env</code>.
+          </span>
+        </div>
+      ) : (
+        <div className="flex items-center gap-3 px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-900 text-xs font-medium">
+          <Cloud className="w-4 h-4 text-emerald-600 shrink-0" aria-hidden="true" />
+          <span>
+            <strong>Conectado a AWS us-east-2 (Ohio)</strong> — API Gateway + Amazon Cognito activos.
+          </span>
+        </div>
+      )}
       {/* Encabezado */}
       <div className="text-center space-y-2">
         <div className="inline-flex items-center gap-2 px-3 py-1 bg-rose-50 text-rose-700 border border-rose-200 rounded-full text-xs font-bold">

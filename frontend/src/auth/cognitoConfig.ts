@@ -3,7 +3,7 @@ import { UserRole } from '../types/auth';
 export interface CognitoConfig {
   userPoolId: string;
   clientId: string;
-  domain: string; // e.g. "https://aqp-solidaria.auth.us-east-1.amazoncognito.com"
+  domain: string; // e.g. "https://us-east-2dh2kmaftu.auth.us-east-2.amazoncognito.com"
   redirectUri: string;
   logoutUri: string;
   scopes: string[];
