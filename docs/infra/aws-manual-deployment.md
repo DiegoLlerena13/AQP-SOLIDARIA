@@ -141,3 +141,18 @@ El presupuesto es un mecanismo de alerta y no constituye un límite automático 
 | TypeScript typecheck | Correcto |
 | Pruebas unitarias de autorización | 61 pruebas aprobadas en 6 archivos |
 | Lambda
+### 5.1. Validación del principio de mínimo privilegio mediante IAM
+
+Se utilizó AWS IAM Policy Simulator para evaluar los permisos del rol `aqp-solidaria-projects-read-role` sobre la tabla DynamoDB `aqp-solidaria-projects`.
+
+La simulación obtuvo los siguientes resultados:
+
+- `dynamodb:GetItem`: permitido.
+- `dynamodb:Query`: permitido.
+- `dynamodb:PutItem`: denegado implícitamente.
+
+Estos resultados evidencian que las políticas IAM del rol autorizan las operaciones de consulta necesarias y no conceden permisos de escritura sobre la tabla.
+
+La evaluación se realizó sin incluir las políticas SCP de AWS Organizations. Por ello, los resultados demuestran el comportamiento de las políticas IAM simuladas, pero no sustituyen una prueba negativa real de ejecución.
+
+**Evidencia:** `evidence/infra/iam-projects-least-privilege.png`.
