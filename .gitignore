@@ -1,5 +1,13 @@
 .aws-sam/
 node_modules/
+dist/
+coverage/
+*.tsbuildinfo
 .env
 .env.*
 !.env.example
+backend/coverage/
+backend/node_modules/
+backend/lambda-package/
+backend/*.zip
+backend/dist/

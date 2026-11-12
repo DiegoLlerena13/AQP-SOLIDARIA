@@ -1,0 +1,1578 @@
+{
+  "version": "2.6.2",
+  "release_version": "1.0.0-academic",
+  "released_at": "2026-11-12",
+  "summary": {
+    "title": "AQP-SOLIDARIA - Zero Trust Architecture",
+    "owner": "Equipo AQP-SOLIDARIA",
+    "description": "AQP-SOLIDARIA es una plataforma académica de donaciones simuladas desplegada en AWS bajo los principios de Zero Trust Architecture (NIST SP 800-207). Utiliza React distribuido mediante Amazon CloudFront y S3 privado, Amazon Cognito para autenticación con MFA TOTP, API Gateway para validación de tokens JWT y scopes, AWS Lambda para lógica de negocio y autorización RBAC/BOLA, y DynamoDB para almacenar proyectos y donaciones simuladas. Este modelo identifica amenazas mediante STRIDE, analiza los límites de confianza y documenta controles implementados, evidencias de pruebas y riesgos residuales.",
+    "id": 0
+  },
+  "detail": {
+    "contributors": [],
+    "diagrams": [
+      {
+        "id": 0,
+        "title": "Arquitectura AWS - Flujo de autenticacion y donaciones",
+        "diagramType": "STRIDE",
+        "placeholder": "Descripción de nuevo diagrama STRIDE",
+        "thumbnail": "./public/content/images/thumbnail.stride.jpg",
+        "version": "2.6.2",
+        "cells": [
+          {
+            "position": {
+              "x": 69.99999999999972,
+              "y": 30.000000000000355
+            },
+            "size": {
+              "width": 190,
+              "height": 120
+            },
+            "attrs": {
+              "label": {
+                "text": "Usuario externo"
+              }
+            },
+            "visible": true,
+            "shape": "trust-boundary-box",
+            "id": "595bc387-b218-4e00-aceb-3ebc73ab2761",
+            "zIndex": -1,
+            "data": {
+              "type": "tm.BoundaryBox",
+              "name": "Usuario externo",
+              "description": "",
+              "isTrustBoundary": true,
+              "hasOpenThreats": false,
+              "crossingFlows": [
+                "6fbee04c-dde7-48c7-88aa-ebca062a9f95",
+                "8875f08c-f645-4192-bdad-978b2c3efca3"
+              ],
+              "containedElements": [
+                "e7d8ebe7-a5d9-48db-a301-ea359c899d1a"
+              ]
+            }
+          },
+          {
+            "position": {
+              "x": 451,
+              "y": 30.00000000000132
+            },
+            "size": {
+              "width": 480,
+              "height": 130
+            },
+            "attrs": {
+              "label": {
+                "text": "Distribución Web"
+              }
+            },
+            "visible": true,
+            "shape": "trust-boundary-box",
+            "id": "ac588826-e96c-462c-837f-c79112b72d42",
+            "zIndex": -1,
+            "data": {
+              "type": "tm.BoundaryBox",
+              "name": "Distribución Web",
+              "description": "",
+              "isTrustBoundary": true,
+              "hasOpenThreats": false,
+              "crossingFlows": [
+                "6fbee04c-dde7-48c7-88aa-ebca062a9f95",
+                "2a970050-f1a5-4cbd-9873-10b76a349783"
+              ],
+              "containedElements": [
+                "c04652cd-39f5-443f-8b73-0483982482ab",
+                "7a6a0a9a-efe4-430e-8591-cc8070be175e"
+              ]
+            }
+          },
+          {
+            "position": {
+              "x": 130,
+              "y": 210
+            },
+            "size": {
+              "width": 380,
+              "height": 150
+            },
+            "attrs": {
+              "label": {
+                "text": "Identidad y API"
+              }
+            },
+            "visible": true,
+            "shape": "trust-boundary-box",
+            "id": "1729b692-58f5-4905-85f6-126857b03781",
+            "zIndex": -1,
+            "data": {
+              "type": "tm.BoundaryBox",
+              "name": "Identidad y API",
+              "description": "",
+              "isTrustBoundary": true,
+              "hasOpenThreats": false,
+              "crossingFlows": [
+                "2a970050-f1a5-4cbd-9873-10b76a349783",
+                "3cd6a0ad-3def-4ff9-abe9-68e7e5c0ad8a",
+                "8875f08c-f645-4192-bdad-978b2c3efca3"
+              ],
+              "containedElements": [
+                "557a832b-c96b-4abd-a94d-d3c25d60940f",
+                "c65d1385-cf3b-4e70-9564-f85ffc261d3c"
+              ]
+            }
+          },
+          {
+            "position": {
+              "x": 616,
+              "y": 190.00000000000136
+            },
+            "size": {
+              "width": 490,
+              "height": 280
+            },
+            "attrs": {
+              "label": {
+                "text": "Backend y datos"
+              }
+            },
+            "visible": true,
+            "shape": "trust-boundary-box",
+            "id": "80c48f16-51d9-40f9-9c0c-e740664fa2d7",
+            "zIndex": -1,
+            "data": {
+              "type": "tm.BoundaryBox",
+              "name": "Backend y datos",
+              "description": "",
+              "isTrustBoundary": true,
+              "hasOpenThreats": false,
+              "crossingFlows": [
+                "3cd6a0ad-3def-4ff9-abe9-68e7e5c0ad8a"
+              ],
+              "containedElements": [
+                "43dbbb87-ff9e-4225-a99d-07fbd7292dbc",
+                "2013be6c-a83a-4f97-a867-01116aa4a70f",
+                "2062a1c2-1e27-454b-baeb-1cfd29dda39e"
+              ]
+            }
+          },
+          {
+            "position": {
+              "x": 89,
+              "y": 70
+            },
+            "size": {
+              "width": 150,
+              "height": 70
+            },
+            "attrs": {
+              "text": {
+                "text": "Usuario \nDONANTE /\n GESTOR / \nAUDITOR"
+              },
+              "body": {
+                "stroke": "#333333",
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "actor",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "bb214b64-d72e-4043-b354-863e2ced9076"
+                },
+                {
+                  "group": "right",
+                  "id": "f41b31c5-1cd3-415e-ab21-da9cea4d2346"
+                },
+                {
+                  "group": "bottom",
+                  "id": "53efdac3-523e-4209-ac9a-36b805bc2d5f"
+                },
+                {
+                  "group": "left",
+                  "id": "7714b702-5530-4461-bbc6-bf911af5d931"
+                }
+              ]
+            },
+            "id": "e7d8ebe7-a5d9-48db-a301-ea359c899d1a",
+            "zIndex": 1,
+            "data": {
+              "type": "tm.Actor",
+              "name": "Usuario \nDONANTE /\n GESTOR / \nAUDITOR",
+              "description": "",
+              "isTrustBoundary": false,
+              "outOfScope": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "providesAuthentication": false,
+              "threats": []
+            }
+          },
+          {
+            "position": {
+              "x": 465,
+              "y": 60
+            },
+            "size": {
+              "width": 100,
+              "height": 90
+            },
+            "attrs": {
+              "text": {
+                "text": "CloudFront + \nReact"
+              },
+              "body": {
+                "stroke": "#333333",
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "process",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "4f481ec0-73d0-4e01-a85f-5fb9be9dbe50"
+                },
+                {
+                  "group": "right",
+                  "id": "47963354-6cc0-4623-9c49-76be9569538a"
+                },
+                {
+                  "group": "bottom",
+                  "id": "1ce38798-bd61-4618-a887-23cbfae50e79"
+                },
+                {
+                  "group": "left",
+                  "id": "9f1d280e-dfcb-4f8b-ada1-601d65758806"
+                }
+              ]
+            },
+            "id": "c04652cd-39f5-443f-8b73-0483982482ab",
+            "zIndex": 2,
+            "data": {
+              "type": "tm.Process",
+              "name": "CloudFront + \nReact",
+              "description": "",
+              "outOfScope": false,
+              "isTrustBoundary": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "handlesCardPayment": false,
+              "handlesGoodsOrServices": false,
+              "isWebApplication": false,
+              "privilegeLevel": "",
+              "threats": []
+            }
+          },
+          {
+            "position": {
+              "x": 785,
+              "y": 70
+            },
+            "size": {
+              "width": 120,
+              "height": 60
+            },
+            "attrs": {
+              "text": {
+                "text": "Amazon S3 — \nFrontend privado"
+              },
+              "topLine": {
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              },
+              "bottomLine": {
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "store",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "66769177-8ad3-4737-b489-23f10a8f9359"
+                },
+                {
+                  "group": "right",
+                  "id": "ac714ac1-56d0-4c50-a744-5159bdc27389"
+                },
+                {
+                  "group": "bottom",
+                  "id": "aac3a79b-3897-4397-b5b3-18fc1147856e"
+                },
+                {
+                  "group": "left",
+                  "id": "fd9af40c-944f-4376-860b-0fb38fc65963"
+                }
+              ]
+            },
+            "id": "7a6a0a9a-efe4-430e-8591-cc8070be175e",
+            "zIndex": 3,
+            "data": {
+              "type": "tm.Store",
+              "name": "Amazon S3 — \nFrontend privado",
+              "description": "",
+              "outOfScope": false,
+              "isTrustBoundary": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isALog": false,
+              "isEncrypted": false,
+              "isSigned": false,
+              "storesCredentials": false,
+              "storesInventory": false,
+              "threats": []
+            }
+          },
+          {
+            "position": {
+              "x": 249.99999999999972,
+              "y": 235
+            },
+            "size": {
+              "width": 100,
+              "height": 100
+            },
+            "attrs": {
+              "text": {
+                "text": "Amazon Cognito\nMFA TOTP"
+              },
+              "body": {
+                "stroke": "#333333",
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "process",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "4f481ec0-73d0-4e01-a85f-5fb9be9dbe50"
+                },
+                {
+                  "group": "right",
+                  "id": "47963354-6cc0-4623-9c49-76be9569538a"
+                },
+                {
+                  "group": "bottom",
+                  "id": "1ce38798-bd61-4618-a887-23cbfae50e79"
+                },
+                {
+                  "group": "left",
+                  "id": "9f1d280e-dfcb-4f8b-ada1-601d65758806"
+                }
+              ]
+            },
+            "id": "557a832b-c96b-4abd-a94d-d3c25d60940f",
+            "zIndex": 4,
+            "data": {
+              "type": "tm.Process",
+              "name": "Amazon Cognito\nMFA TOTP",
+              "description": "",
+              "outOfScope": false,
+              "isTrustBoundary": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "handlesCardPayment": false,
+              "handlesGoodsOrServices": false,
+              "isWebApplication": false,
+              "privilegeLevel": "",
+              "threats": []
+            }
+          },
+          {
+            "position": {
+              "x": 380,
+              "y": 240
+            },
+            "size": {
+              "width": 100,
+              "height": 90
+            },
+            "attrs": {
+              "text": {
+                "text": "\tAPI Gateway \nJWT"
+              },
+              "body": {
+                "stroke": "red",
+                "strokeWidth": 2.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "process",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "4f481ec0-73d0-4e01-a85f-5fb9be9dbe50"
+                },
+                {
+                  "group": "right",
+                  "id": "47963354-6cc0-4623-9c49-76be9569538a"
+                },
+                {
+                  "group": "bottom",
+                  "id": "1ce38798-bd61-4618-a887-23cbfae50e79"
+                },
+                {
+                  "group": "left",
+                  "id": "9f1d280e-dfcb-4f8b-ada1-601d65758806"
+                }
+              ]
+            },
+            "id": "c65d1385-cf3b-4e70-9564-f85ffc261d3c",
+            "zIndex": 5,
+            "data": {
+              "type": "tm.Process",
+              "name": "\tAPI Gateway \nJWT",
+              "description": "",
+              "outOfScope": false,
+              "isTrustBoundary": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": true,
+              "handlesCardPayment": false,
+              "handlesGoodsOrServices": false,
+              "isWebApplication": false,
+              "privilegeLevel": "",
+              "threats": [
+                {
+                  "id": "11fca436-52fc-4995-9876-d0d2a17f09c5",
+                  "title": "STRIDE-S01 - Suplantación mediante JWT inválido",
+                  "status": "Mitigated",
+                  "severity": "High",
+                  "type": "Spoofing / Spoofing",
+                  "description": "Un atacante intenta acceder a endpoints protegidos utilizando tokens JWT falsificados, vencidos, emitidos por otro proveedor o de tipo incorrecto.",
+                  "mitigation": "API Gateway verifica firma, emisor, audiencia y expiración del JWT. El backend añade validaciones de identidad, tipo de token, roles y scopes mediante withAuthz.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 1,
+                  "score": ""
+                },
+                {
+                  "id": "8ca747ba-3011-4413-bbc2-b371be13f4a3",
+                  "title": "STRIDE-D01 - Saturación de API por solicitudes excesivas",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Denial of service / Denegación de servicio",
+                  "description": "Un atacante automatiza solicitudes repetitivas contra endpoints públicos o protegidos, pudiendo aumentar el consumo de recursos, afectar la disponibilidad y generar costos en AWS.",
+                  "mitigation": "Se dispone de API Gateway, Lambda y monitoreo en CloudWatch. Falta verificar límites efectivos de solicitudes, alarmas y protecciones adicionales frente al abuso. AWS WAF no fue habilitado en la distribución.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 5,
+                  "score": ""
+                }
+              ],
+              "threatFrequency": {
+                "spoofing": 2,
+                "tampering": 0,
+                "repudiation": 0,
+                "informationDisclosure": 0,
+                "denialOfService": 1,
+                "elevationOfPrivilege": 0
+              }
+            }
+          },
+          {
+            "position": {
+              "x": 650,
+              "y": 220
+            },
+            "size": {
+              "width": 120,
+              "height": 100
+            },
+            "attrs": {
+              "text": {
+                "text": "AWS Lambda \nRBAC / BOLA"
+              },
+              "body": {
+                "stroke": "red",
+                "strokeWidth": 2.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "process",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "4f481ec0-73d0-4e01-a85f-5fb9be9dbe50"
+                },
+                {
+                  "group": "right",
+                  "id": "47963354-6cc0-4623-9c49-76be9569538a"
+                },
+                {
+                  "group": "bottom",
+                  "id": "1ce38798-bd61-4618-a887-23cbfae50e79"
+                },
+                {
+                  "group": "left",
+                  "id": "9f1d280e-dfcb-4f8b-ada1-601d65758806"
+                }
+              ]
+            },
+            "id": "43dbbb87-ff9e-4225-a99d-07fbd7292dbc",
+            "zIndex": 6,
+            "data": {
+              "type": "tm.Process",
+              "name": "AWS Lambda \nRBAC / BOLA",
+              "description": "",
+              "outOfScope": false,
+              "isTrustBoundary": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": true,
+              "handlesCardPayment": false,
+              "handlesGoodsOrServices": false,
+              "isWebApplication": false,
+              "privilegeLevel": "",
+              "threats": [
+                {
+                  "id": "d81465f3-67dc-4d14-8c35-4092e3677448",
+                  "title": "STRIDE-T01 - Manipulación de donaciones",
+                  "status": "Mitigated",
+                  "severity": "High",
+                  "type": "Tampering / Manipulación",
+                  "description": "Un usuario intenta alterar el importe, el estado o el propietario de una donación para modificar indebidamente la recaudación simulada.",
+                  "mitigation": "La API valida importes y utiliza la identidad del token verificado. DynamoDB aplica escrituras condicionales y transacciones para mantener la consistencia entre donaciones y proyectos. Se debe conservar evidencia de pruebas negativas y de atomicidad.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 2,
+                  "score": ""
+                },
+                {
+                  "id": "85a44c85-9af8-49f6-b001-b3235f25d908",
+                  "title": "STRIDE-R01 - Operaciones sin trazabilidad suficiente",
+                  "status": "Open",
+                  "severity": "Medium",
+                  "type": "Repudiation / Repudiación",
+                  "description": "Un usuario podría negar una operación si no existe evidencia suficiente de quién la ejecutó, cuándo ocurrió y cuál fue su resultado.",
+                  "mitigation": "Se generan registros técnicos mediante CloudWatch Logs y eventos estructurados de autorización. Falta comprobar la cobertura de auditoría de todas las operaciones y la consulta persistente de AuditEvents.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 3,
+                  "score": ""
+                },
+                {
+                  "id": "ed083786-ae63-42ac-9bb8-7d08951b7630",
+                  "title": "STRIDE-I01 - Acceso a donaciones de otro usuario (BOLA)",
+                  "status": "Mitigated",
+                  "severity": "High",
+                  "type": "Information disclosure / Brecha de información",
+                  "description": "Un donante autenticado conoce el identificador de una donación ajena e intenta acceder a ella o modificarla.",
+                  "mitigation": "El backend obtiene la identidad desde el JWT validado y ejecuta assertOwner antes de modificar la donación. Se comprobó con dos usuarios Cognito que la consulta propia no expone donaciones ajenas y que la simulación de una donación de otro usuario devuelve HTTP 404.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 4,
+                  "score": ""
+                },
+                {
+                  "id": "ff838971-94ac-4a27-a6cb-95f7e0f75643",
+                  "title": "STRIDE-E01 - Escalada de privilegios de DONANTE a GESTOR",
+                  "status": "Mitigated",
+                  "severity": "Critical",
+                  "type": "Elevation of privilege / Elevación de privilegios",
+                  "description": "Un usuario del grupo DONANTE intenta invocar funciones administrativas como crear o publicar campañas, modificando recursos que requieren el rol GESTOR.",
+                  "mitigation": "API Gateway exige el scope correspondiente y Lambda comprueba los grupos y scopes con withAuthz. Las pruebas automatizadas verificaron que DONANTE recibe HTTP 403 al intentar operaciones reservadas para GESTOR. Cognito exige MFA TOTP durante nuevos inicios de sesión.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 6,
+                  "score": ""
+                }
+              ],
+              "threatFrequency": {
+                "spoofing": 0,
+                "tampering": 1,
+                "repudiation": 1,
+                "informationDisclosure": 1,
+                "denialOfService": 0,
+                "elevationOfPrivilege": 1
+              }
+            }
+          },
+          {
+            "position": {
+              "x": 970,
+              "y": 250
+            },
+            "size": {
+              "width": 100,
+              "height": 100
+            },
+            "attrs": {
+              "text": {
+                "text": "Amazon CloudWatch \nLogs"
+              },
+              "body": {
+                "stroke": "#333333",
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "process",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "4f481ec0-73d0-4e01-a85f-5fb9be9dbe50"
+                },
+                {
+                  "group": "right",
+                  "id": "47963354-6cc0-4623-9c49-76be9569538a"
+                },
+                {
+                  "group": "bottom",
+                  "id": "1ce38798-bd61-4618-a887-23cbfae50e79"
+                },
+                {
+                  "group": "left",
+                  "id": "9f1d280e-dfcb-4f8b-ada1-601d65758806"
+                }
+              ]
+            },
+            "id": "2013be6c-a83a-4f97-a867-01116aa4a70f",
+            "zIndex": 7,
+            "data": {
+              "type": "tm.Process",
+              "name": "Amazon CloudWatch \nLogs",
+              "description": "",
+              "outOfScope": false,
+              "isTrustBoundary": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "handlesCardPayment": false,
+              "handlesGoodsOrServices": false,
+              "isWebApplication": false,
+              "privilegeLevel": "",
+              "threats": []
+            }
+          },
+          {
+            "position": {
+              "x": 650,
+              "y": 390
+            },
+            "size": {
+              "width": 120,
+              "height": 60
+            },
+            "attrs": {
+              "text": {
+                "text": "Amazon DynamoDB"
+              },
+              "topLine": {
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              },
+              "bottomLine": {
+                "strokeWidth": 1.5,
+                "strokeDasharray": null
+              }
+            },
+            "visible": true,
+            "shape": "store",
+            "ports": {
+              "groups": {
+                "top": {
+                  "position": "top",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "right": {
+                  "position": "right",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "bottom": {
+                  "position": "bottom",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                },
+                "left": {
+                  "position": "left",
+                  "attrs": {
+                    "circle": {
+                      "r": 4,
+                      "magnet": true,
+                      "stroke": "#5F95FF",
+                      "strokeWidth": 1,
+                      "fill": "#fff",
+                      "style": {
+                        "visibility": "hidden"
+                      }
+                    }
+                  }
+                }
+              },
+              "items": [
+                {
+                  "group": "top",
+                  "id": "66769177-8ad3-4737-b489-23f10a8f9359"
+                },
+                {
+                  "group": "right",
+                  "id": "ac714ac1-56d0-4c50-a744-5159bdc27389"
+                },
+                {
+                  "group": "bottom",
+                  "id": "aac3a79b-3897-4397-b5b3-18fc1147856e"
+                },
+                {
+                  "group": "left",
+                  "id": "fd9af40c-944f-4376-860b-0fb38fc65963"
+                }
+              ]
+            },
+            "id": "2062a1c2-1e27-454b-baeb-1cfd29dda39e",
+            "zIndex": 8,
+            "data": {
+              "type": "tm.Store",
+              "name": "Amazon DynamoDB",
+              "description": "",
+              "outOfScope": false,
+              "isTrustBoundary": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isALog": false,
+              "isEncrypted": false,
+              "isSigned": false,
+              "storesCredentials": false,
+              "storesInventory": false,
+              "threats": []
+            }
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "targetMarker": {
+                  "name": "block"
+                },
+                "sourceMarker": {
+                  "name": ""
+                },
+                "strokeDasharray": null
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 10,
+            "connector": "smooth",
+            "data": {
+              "type": "tm.Flow",
+              "name": "HTTPS\nsolicita aplicación React",
+              "description": "",
+              "outOfScope": false,
+              "isTrustBoundary": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isBidirectional": false,
+              "isEncrypted": false,
+              "isPublicNetwork": false,
+              "protocol": "",
+              "threats": [],
+              "trustBoundaryIds": [
+                "595bc387-b218-4e00-aceb-3ebc73ab2761",
+                "ac588826-e96c-462c-837f-c79112b72d42"
+              ]
+            },
+            "labels": [
+              "HTTPS\nsolicita aplicación React"
+            ],
+            "id": "6fbee04c-dde7-48c7-88aa-ebca062a9f95",
+            "source": {
+              "cell": "e7d8ebe7-a5d9-48db-a301-ea359c899d1a",
+              "port": "f41b31c5-1cd3-415e-ab21-da9cea4d2346"
+            },
+            "target": {
+              "cell": "c04652cd-39f5-443f-8b73-0483982482ab",
+              "port": "9f1d280e-dfcb-4f8b-ada1-601d65758806"
+            },
+            "vertices": [
+              {
+                "x": 400,
+                "y": 105
+              }
+            ]
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "targetMarker": {
+                  "name": "block"
+                },
+                "sourceMarker": {
+                  "name": ""
+                },
+                "strokeDasharray": null
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 10,
+            "connector": "smooth",
+            "data": {
+              "type": "tm.Flow",
+              "name": "OAC \nlectura de archivos estáticos",
+              "description": "",
+              "outOfScope": false,
+              "isTrustBoundary": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isBidirectional": false,
+              "isEncrypted": false,
+              "isPublicNetwork": false,
+              "protocol": "",
+              "threats": [],
+              "trustBoundaryIds": []
+            },
+            "labels": [
+              "OAC \nlectura de archivos estáticos"
+            ],
+            "id": "88f3ba1e-9b8a-4570-a4a2-b641b3142290",
+            "source": {
+              "cell": "c04652cd-39f5-443f-8b73-0483982482ab",
+              "port": "47963354-6cc0-4623-9c49-76be9569538a"
+            },
+            "target": {
+              "cell": "7a6a0a9a-efe4-430e-8591-cc8070be175e",
+              "port": "fd9af40c-944f-4376-860b-0fb38fc65963"
+            },
+            "vertices": []
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "targetMarker": {
+                  "name": "block"
+                },
+                "sourceMarker": {
+                  "name": ""
+                },
+                "strokeDasharray": null
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 10,
+            "connector": "smooth",
+            "data": {
+              "type": "tm.Flow",
+              "name": "HTTPS \nBearer access token",
+              "description": "",
+              "outOfScope": false,
+              "isTrustBoundary": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isBidirectional": false,
+              "isEncrypted": false,
+              "isPublicNetwork": false,
+              "protocol": "",
+              "threats": [],
+              "trustBoundaryIds": [
+                "ac588826-e96c-462c-837f-c79112b72d42",
+                "1729b692-58f5-4905-85f6-126857b03781"
+              ]
+            },
+            "labels": [
+              "HTTPS \nBearer access token"
+            ],
+            "id": "2a970050-f1a5-4cbd-9873-10b76a349783",
+            "source": {
+              "cell": "c04652cd-39f5-443f-8b73-0483982482ab",
+              "port": "1ce38798-bd61-4618-a887-23cbfae50e79"
+            },
+            "target": {
+              "cell": "c65d1385-cf3b-4e70-9564-f85ffc261d3c",
+              "port": "4f481ec0-73d0-4e01-a85f-5fb9be9dbe50"
+            },
+            "vertices": []
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "targetMarker": {
+                  "name": "block"
+                },
+                "sourceMarker": {
+                  "name": ""
+                },
+                "strokeDasharray": null
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 10,
+            "connector": "smooth",
+            "data": {
+              "type": "tm.Flow",
+              "name": "Invocación autorizada \ny contexto JWT",
+              "description": "",
+              "outOfScope": false,
+              "isTrustBoundary": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isBidirectional": false,
+              "isEncrypted": false,
+              "isPublicNetwork": false,
+              "protocol": "",
+              "threats": [],
+              "trustBoundaryIds": [
+                "1729b692-58f5-4905-85f6-126857b03781",
+                "80c48f16-51d9-40f9-9c0c-e740664fa2d7"
+              ]
+            },
+            "labels": [
+              "Invocación autorizada \ny contexto JWT"
+            ],
+            "id": "3cd6a0ad-3def-4ff9-abe9-68e7e5c0ad8a",
+            "source": {
+              "cell": "c65d1385-cf3b-4e70-9564-f85ffc261d3c",
+              "port": "47963354-6cc0-4623-9c49-76be9569538a"
+            },
+            "target": {
+              "cell": "43dbbb87-ff9e-4225-a99d-07fbd7292dbc",
+              "port": "9f1d280e-dfcb-4f8b-ada1-601d65758806"
+            },
+            "vertices": []
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "targetMarker": {
+                  "name": "block"
+                },
+                "sourceMarker": {
+                  "name": ""
+                },
+                "strokeDasharray": null
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 10,
+            "connector": "smooth",
+            "data": {
+              "type": "tm.Flow",
+              "name": "Operaciones de proyectos \ny donaciones",
+              "description": "",
+              "outOfScope": false,
+              "isTrustBoundary": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isBidirectional": false,
+              "isEncrypted": false,
+              "isPublicNetwork": false,
+              "protocol": "",
+              "threats": [],
+              "trustBoundaryIds": []
+            },
+            "labels": [
+              "Operaciones de proyectos \ny donaciones"
+            ],
+            "id": "6c8f85fb-f420-43b6-9835-c8b4eaccd3fd",
+            "source": {
+              "cell": "43dbbb87-ff9e-4225-a99d-07fbd7292dbc",
+              "port": "1ce38798-bd61-4618-a887-23cbfae50e79"
+            },
+            "target": {
+              "cell": "2062a1c2-1e27-454b-baeb-1cfd29dda39e",
+              "port": "66769177-8ad3-4737-b489-23f10a8f9359"
+            },
+            "vertices": []
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "targetMarker": {
+                  "name": "block"
+                },
+                "sourceMarker": {
+                  "name": ""
+                },
+                "strokeDasharray": null
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 10,
+            "connector": "smooth",
+            "data": {
+              "type": "tm.Flow",
+              "name": "Eventos técnicos y \nrechazos de autorización",
+              "description": "",
+              "outOfScope": false,
+              "isTrustBoundary": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isBidirectional": false,
+              "isEncrypted": false,
+              "isPublicNetwork": false,
+              "protocol": "",
+              "threats": [],
+              "trustBoundaryIds": []
+            },
+            "labels": [
+              "Eventos técnicos y \nrechazos de autorización"
+            ],
+            "id": "253401fb-b03e-49f7-9512-a9c7371bdead",
+            "source": {
+              "cell": "43dbbb87-ff9e-4225-a99d-07fbd7292dbc",
+              "port": "47963354-6cc0-4623-9c49-76be9569538a"
+            },
+            "target": {
+              "cell": "2013be6c-a83a-4f97-a867-01116aa4a70f",
+              "port": "9f1d280e-dfcb-4f8b-ada1-601d65758806"
+            },
+            "vertices": []
+          },
+          {
+            "shape": "flow",
+            "attrs": {
+              "line": {
+                "stroke": "#333333",
+                "targetMarker": {
+                  "name": "block"
+                },
+                "sourceMarker": {
+                  "name": ""
+                },
+                "strokeDasharray": null
+              }
+            },
+            "width": 200,
+            "height": 100,
+            "zIndex": 10,
+            "connector": "smooth",
+            "data": {
+              "type": "tm.Flow",
+              "name": "OAuth2 Authorization Code + \nPKCE / TOTP",
+              "description": "",
+              "outOfScope": false,
+              "isTrustBoundary": false,
+              "reasonOutOfScope": "",
+              "hasOpenThreats": false,
+              "isBidirectional": false,
+              "isEncrypted": false,
+              "isPublicNetwork": false,
+              "protocol": "",
+              "threats": [],
+              "trustBoundaryIds": [
+                "595bc387-b218-4e00-aceb-3ebc73ab2761",
+                "1729b692-58f5-4905-85f6-126857b03781"
+              ]
+            },
+            "labels": [
+              "OAuth2 Authorization Code + \nPKCE / TOTP"
+            ],
+            "id": "8875f08c-f645-4192-bdad-978b2c3efca3",
+            "source": {
+              "cell": "e7d8ebe7-a5d9-48db-a301-ea359c899d1a",
+              "port": "53efdac3-523e-4209-ac9a-36b805bc2d5f"
+            },
+            "target": {
+              "cell": "557a832b-c96b-4abd-a94d-d3c25d60940f",
+              "port": "4f481ec0-73d0-4e01-a85f-5fb9be9dbe50"
+            },
+            "vertices": [
+              {
+                "x": 260,
+                "y": 180
+              }
+            ]
+          }
+        ],
+        "description": "Diagrama de flujo de datos y limites de confianza de AQP-SOLIDARIA en AWS."
+      }
+    ],
+    "diagramTop": 1,
+    "reviewer": "Equipo de Seguridad - AQP-SOLIDARIA",
+    "threatTop": 6
+  }
+}

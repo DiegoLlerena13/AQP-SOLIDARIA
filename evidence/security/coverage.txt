@@ -1,0 +1,44 @@
+
+> backend@1.0.0 test:coverage
+> vitest run --coverage
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.1.0 [39m[90mE:/TAIS/AQP-SOLIDARIA/backend[39m
+      [2mCoverage enabled with [22m[33mv8[39m
+
+ [32mÔ£ô[39m test/authz/principal.test.ts [2m([22m[2m22 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32mÔ£ô[39m test/authz/ownership.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32mÔ£ô[39m test/authz/policy.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32mÔ£ô[39m test/authz/contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32mÔ£ô[39m test/authz/rbac.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32mÔ£ô[39m test/authz/withAuthz.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+ [32mÔ£ô[39m test/authz/handlers.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m7 passed[39m[22m[90m (7)[39m
+[2m      Tests [22m [1m[32m79 passed[39m[22m[90m (79)[39m
+[2m   Start at [22m 16:49:22
+[2m   Duration [22m 630ms[2m (import 43%, worker 25%, transform 20%, tests 11%)[22m
+
+[34m % [39m[2mCoverage report from [22m[33mv8[39m
+----------------|---------|----------|---------|---------|-------------------
+File            | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+----------------|---------|----------|---------|---------|-------------------
+All files       |   87.83 |    76.61 |   94.59 |   87.58 |                   
+ src/authz      |   95.05 |    83.78 |   93.33 |   94.91 |                   
+  errors.ts     |     100 |      100 |     100 |     100 |                   
+  index.ts      |       0 |        0 |       0 |       0 |                   
+  ownership.ts  |     100 |      100 |     100 |     100 |                   
+  policy.ts     |    92.3 |    80.39 |     100 |    92.3 | 125,161,165,206   
+  principal.ts  |   94.59 |    93.05 |   84.61 |   94.28 | 109-113,122       
+  rbac.ts       |     100 |      100 |     100 |     100 |                   
+  withAuthz.ts  |   96.96 |    64.28 |     100 |   96.96 | 150               
+ src/donations  |   71.64 |    43.75 |     100 |   71.21 |                   
+  create.ts     |   64.28 |       44 |     100 |   64.28 | 19,28,102-127     
+  me.ts         |   83.33 |       50 |     100 |   81.81 | 43-44             
+  simulate.ts   |   74.07 |    42.85 |     100 |   74.07 | 18,77-90,109-120  
+ src/projects   |   74.19 |    57.14 |     100 |   74.19 |                   
+  create.ts     |   82.35 |       70 |     100 |   82.35 | 18,59-60          
+  publish.ts    |   64.28 |       25 |     100 |   64.28 | 15,47-58          
+ test/helpers   |     100 |    93.54 |     100 |     100 |                   
+  mockEvents.ts |     100 |    93.54 |     100 |     100 | 36,90             
+----------------|---------|----------|---------|---------|-------------------
