@@ -3,39 +3,18 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.handler = void 0;
 const client_dynamodb_1 = require("@aws-sdk/client-dynamodb");
 const lib_dynamodb_1 = require("@aws-sdk/lib-dynamodb");
+const withAuthz_js_1 = require("../authz/withAuthz.js");
 const client = new client_dynamodb_1.DynamoDBClient({});
 const docClient = lib_dynamodb_1.DynamoDBDocumentClient.from(client);
-const handler = async (event) => {
-    // 1. Autorización estricta (Zero Trust)
-    const claims = event.requestContext?.authorizer?.jwt?.claims;
-    const groups = claims?.["cognito:groups"];
-    const roles = Array.isArray(groups) ? groups : typeof groups === "string" ? groups.split(/[,\s]+/).filter(Boolean) : [];
-    const donorSub = claims?.sub;
-    if (!donorSub) {
-        return {
-            statusCode: 401,
-            body: JSON.stringify({ code: "UNAUTHORIZED", message: "Autenticación requerida" })
-        };
-    }
-    // 2. Validación de Rol (Solo los donantes pueden tener historial de donaciones)
-    if (!roles.includes("DONANTE")) {
-        return {
-            statusCode: 403,
-            body: JSON.stringify({ code: "FORBIDDEN", message: "No tienes permiso para ver este historial" })
-        };
-    }
-    // 3. Consulta a DynamoDB usando el Índice Secundario Global (GSI)
+exports.handler = (0, withAuthz_js_1.withAuthz)(async (event, principal) => {
     try {
         const command = new lib_dynamodb_1.QueryCommand({
             TableName: process.env.DONATIONS_TABLE,
-            IndexName: "donorSub-createdAt", // Asegúrate de que este GSI exista en tu template.yaml
+            IndexName: "donorSub-createdAt",
             KeyConditionExpression: "donorSub = :sub",
-            ExpressionAttributeValues: {
-                ":sub": donorSub
-            }
+            ExpressionAttributeValues: { ":sub": principal.sub }
         });
         const { Items } = await docClient.send(command);
-        // 4. Mapeo de respuesta (ocultando datos sensibles si los hubiera)
         const history = (Items || []).map(item => ({
             donationId: item.donationId,
             projectId: item.projectId,
@@ -52,11 +31,6 @@ const handler = async (event) => {
         };
     }
     catch (error) {
-        console.error("Error al consultar el historial:", error);
-        return {
-            statusCode: 500,
-            body: JSON.stringify({ code: "INTERNAL_SERVER_ERROR", message: "Error al recuperar el historial" })
-        };
+        return { statusCode: 500, body: JSON.stringify({ code: "INTERNAL_SERVER_ERROR", message: "Error al recuperar el historial" }) };
     }
-};
-exports.handler = handler;
+});
