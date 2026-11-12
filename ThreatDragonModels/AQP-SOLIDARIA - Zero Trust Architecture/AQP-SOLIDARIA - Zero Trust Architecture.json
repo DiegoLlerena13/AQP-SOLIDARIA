@@ -650,8 +650,8 @@
                 "text": "\tAPI Gateway \nJWT"
               },
               "body": {
-                "stroke": "#333333",
-                "strokeWidth": 1.5,
+                "stroke": "red",
+                "strokeWidth": 2.5,
                 "strokeDasharray": null
               }
             },
@@ -748,12 +748,47 @@
               "outOfScope": false,
               "isTrustBoundary": false,
               "reasonOutOfScope": "",
-              "hasOpenThreats": false,
+              "hasOpenThreats": true,
               "handlesCardPayment": false,
               "handlesGoodsOrServices": false,
               "isWebApplication": false,
               "privilegeLevel": "",
-              "threats": []
+              "threats": [
+                {
+                  "id": "11fca436-52fc-4995-9876-d0d2a17f09c5",
+                  "title": "STRIDE-S01 - Suplantación mediante JWT inválido",
+                  "status": "Mitigated",
+                  "severity": "High",
+                  "type": "Spoofing / Spoofing",
+                  "description": "Un atacante intenta acceder a endpoints protegidos utilizando tokens JWT falsificados, vencidos, emitidos por otro proveedor o de tipo incorrecto.",
+                  "mitigation": "API Gateway verifica firma, emisor, audiencia y expiración del JWT. El backend añade validaciones de identidad, tipo de token, roles y scopes mediante withAuthz.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 1,
+                  "score": ""
+                },
+                {
+                  "id": "8ca747ba-3011-4413-bbc2-b371be13f4a3",
+                  "title": "STRIDE-D01 - Saturación de API por solicitudes excesivas",
+                  "status": "Open",
+                  "severity": "High",
+                  "type": "Denial of service / Denegación de servicio",
+                  "description": "Un atacante automatiza solicitudes repetitivas contra endpoints públicos o protegidos, pudiendo aumentar el consumo de recursos, afectar la disponibilidad y generar costos en AWS.",
+                  "mitigation": "Se dispone de API Gateway, Lambda y monitoreo en CloudWatch. Falta verificar límites efectivos de solicitudes, alarmas y protecciones adicionales frente al abuso. AWS WAF no fue habilitado en la distribución.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 5,
+                  "score": ""
+                }
+              ],
+              "threatFrequency": {
+                "spoofing": 2,
+                "tampering": 0,
+                "repudiation": 0,
+                "informationDisclosure": 0,
+                "denialOfService": 1,
+                "elevationOfPrivilege": 0
+              }
             }
           },
           {
@@ -770,8 +805,8 @@
                 "text": "AWS Lambda \nRBAC / BOLA"
               },
               "body": {
-                "stroke": "#333333",
-                "strokeWidth": 1.5,
+                "stroke": "red",
+                "strokeWidth": 2.5,
                 "strokeDasharray": null
               }
             },
@@ -868,12 +903,73 @@
               "outOfScope": false,
               "isTrustBoundary": false,
               "reasonOutOfScope": "",
-              "hasOpenThreats": false,
+              "hasOpenThreats": true,
               "handlesCardPayment": false,
               "handlesGoodsOrServices": false,
               "isWebApplication": false,
               "privilegeLevel": "",
-              "threats": []
+              "threats": [
+                {
+                  "id": "d81465f3-67dc-4d14-8c35-4092e3677448",
+                  "title": "STRIDE-T01 - Manipulación de donaciones",
+                  "status": "Mitigated",
+                  "severity": "High",
+                  "type": "Tampering / Manipulación",
+                  "description": "Un usuario intenta alterar el importe, el estado o el propietario de una donación para modificar indebidamente la recaudación simulada.",
+                  "mitigation": "La API valida importes y utiliza la identidad del token verificado. DynamoDB aplica escrituras condicionales y transacciones para mantener la consistencia entre donaciones y proyectos. Se debe conservar evidencia de pruebas negativas y de atomicidad.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 2,
+                  "score": ""
+                },
+                {
+                  "id": "85a44c85-9af8-49f6-b001-b3235f25d908",
+                  "title": "STRIDE-R01 - Operaciones sin trazabilidad suficiente",
+                  "status": "Open",
+                  "severity": "Medium",
+                  "type": "Repudiation / Repudiación",
+                  "description": "Un usuario podría negar una operación si no existe evidencia suficiente de quién la ejecutó, cuándo ocurrió y cuál fue su resultado.",
+                  "mitigation": "Se generan registros técnicos mediante CloudWatch Logs y eventos estructurados de autorización. Falta comprobar la cobertura de auditoría de todas las operaciones y la consulta persistente de AuditEvents.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 3,
+                  "score": ""
+                },
+                {
+                  "id": "ed083786-ae63-42ac-9bb8-7d08951b7630",
+                  "title": "STRIDE-I01 - Acceso a donaciones de otro usuario (BOLA)",
+                  "status": "Mitigated",
+                  "severity": "High",
+                  "type": "Information disclosure / Brecha de información",
+                  "description": "Un donante autenticado conoce el identificador de una donación ajena e intenta acceder a ella o modificarla.",
+                  "mitigation": "El backend obtiene la identidad desde el JWT validado y ejecuta assertOwner antes de modificar la donación. Se comprobó con dos usuarios Cognito que la consulta propia no expone donaciones ajenas y que la simulación de una donación de otro usuario devuelve HTTP 404.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 4,
+                  "score": ""
+                },
+                {
+                  "id": "ff838971-94ac-4a27-a6cb-95f7e0f75643",
+                  "title": "STRIDE-E01 - Escalada de privilegios de DONANTE a GESTOR",
+                  "status": "Mitigated",
+                  "severity": "Critical",
+                  "type": "Elevation of privilege / Elevación de privilegios",
+                  "description": "Un usuario del grupo DONANTE intenta invocar funciones administrativas como crear o publicar campañas, modificando recursos que requieren el rol GESTOR.",
+                  "mitigation": "API Gateway exige el scope correspondiente y Lambda comprueba los grupos y scopes con withAuthz. Las pruebas automatizadas verificaron que DONANTE recibe HTTP 403 al intentar operaciones reservadas para GESTOR. Cognito exige MFA TOTP durante nuevos inicios de sesión.",
+                  "modelType": "STRIDE",
+                  "new": false,
+                  "number": 6,
+                  "score": ""
+                }
+              ],
+              "threatFrequency": {
+                "spoofing": 0,
+                "tampering": 1,
+                "repudiation": 1,
+                "informationDisclosure": 1,
+                "denialOfService": 0,
+                "elevationOfPrivilege": 1
+              }
             }
           },
           {
@@ -1477,6 +1573,6 @@
     ],
     "diagramTop": 1,
     "reviewer": "Equipo de Seguridad - AQP-SOLIDARIA",
-    "threatTop": 0
+    "threatTop": 6
   }
 }
