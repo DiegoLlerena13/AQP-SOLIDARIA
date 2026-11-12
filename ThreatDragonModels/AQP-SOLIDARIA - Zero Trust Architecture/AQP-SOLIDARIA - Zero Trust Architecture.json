@@ -1,0 +1,29 @@
+{
+  "version": "2.6.2",
+  "release_version": "1.0.0-academic",
+  "released_at": "2026-11-12",
+  "summary": {
+    "title": "AQP-SOLIDARIA - Zero Trust Architecture",
+    "owner": "Equipo AQP-SOLIDARIA",
+    "description": "AQP-SOLIDARIA es una plataforma académica de donaciones simuladas desplegada en AWS bajo los principios de Zero Trust Architecture (NIST SP 800-207). Utiliza React distribuido mediante Amazon CloudFront y S3 privado, Amazon Cognito para autenticación con MFA TOTP, API Gateway para validación de tokens JWT y scopes, AWS Lambda para lógica de negocio y autorización RBAC/BOLA, y DynamoDB para almacenar proyectos y donaciones simuladas. Este modelo identifica amenazas mediante STRIDE, analiza los límites de confianza y documenta controles implementados, evidencias de pruebas y riesgos residuales.",
+    "id": 0
+  },
+  "detail": {
+    "contributors": [],
+    "diagrams": [
+      {
+        "id": 0,
+        "title": "Arquitectura AWS - Flujo de autenticacion y donaciones",
+        "diagramType": "STRIDE",
+        "placeholder": "Descripción de nuevo diagrama STRIDE",
+        "thumbnail": "./public/content/images/thumbnail.stride.jpg",
+        "version": "2.6.2",
+        "cells": [],
+        "description": "Diagrama de flujo de datos y limites de confianza de AQP-SOLIDARIA en AWS."
+      }
+    ],
+    "diagramTop": 1,
+    "reviewer": "Equipo de Seguridad - AQP-SOLIDARIA",
+    "threatTop": 0
+  }
+}
