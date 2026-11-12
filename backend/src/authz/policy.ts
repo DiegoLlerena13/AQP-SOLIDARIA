@@ -1,9 +1,9 @@
 /**
  * @file policy.ts
- * @description Matriz declarativa de polticas de autorizacin (design.md 4).
+ * @description Matriz declarativa de políticas de autorización (design.md §4).
  * Define los endpoints permitidos, sus scopes y roles requeridos.
- * Aplica el principio de denegacin por defecto (Fail-closed):
- * cualquier ruta o mtodo no explcitamente listado en esta matriz es denegado (HTTP 403).
+ * Aplica el principio de denegación por defecto (Fail-closed):
+ * cualquier ruta o método no explícitamente listado en esta matriz es denegado (HTTP 403).
  */
 
 import { AuthzError } from './errors.js';
@@ -22,20 +22,20 @@ export interface RoutePolicy {
 }
 
 /**
- * Matriz nica y autoritativa de endpoints del backend AQP-SOLIDARIA (design.md 4).
+ * Matriz única y autoritativa de endpoints del backend AQP-SOLIDARIA (design.md §4).
  */
 export const ENDPOINT_POLICIES: readonly RoutePolicy[] = [
   {
     method: 'GET',
     pathPattern: '/v1/projects',
     isPublic: true,
-    description: 'Catlogo pblico de proyectos confirmados y publicados'
+    description: 'Catálogo público de proyectos confirmados y publicados'
   },
   {
     method: 'GET',
     pathPattern: '/v1/projects/{projectId}',
     isPublic: true,
-    description: 'Detalle de proyecto pblico publicado'
+    description: 'Detalle de proyecto público publicado'
   },
   {
     method: 'GET',
@@ -48,21 +48,21 @@ export const ENDPOINT_POLICIES: readonly RoutePolicy[] = [
     pathPattern: '/v1/projects',
     requiredRole: 'GESTOR',
     requiredScope: 'api/projects.write',
-    description: 'Creacin de nuevo proyecto en estado BORRADOR'
+    description: 'Creación de nuevo proyecto en estado BORRADOR'
   },
   {
     method: 'PATCH',
     pathPattern: '/v1/projects/{projectId}/publish',
     requiredRole: 'GESTOR',
     requiredScope: 'api/projects.write',
-    description: 'Publicacin de un proyecto en borrador'
+    description: 'Publicación de un proyecto en borrador'
   },
   {
     method: 'POST',
     pathPattern: '/v1/donations',
     requiredRole: 'DONANTE',
     requiredScope: 'api/donations.write',
-    description: 'Creacin de intencin de donacin simulada'
+    description: 'Creación de intención de donación simulada'
   },
   {
     method: 'POST',
@@ -71,7 +71,7 @@ export const ENDPOINT_POLICIES: readonly RoutePolicy[] = [
     requiredScope: 'api/donations.write',
     requiresOwnership: true,
     stageRestriction: 'academic',
-    description: 'Confirmacin o rechazo de donacin propia (exclusivo stage academic)'
+    description: 'Confirmación o rechazo de donación propia (exclusivo stage academic)'
   },
   {
     method: 'GET',
@@ -85,12 +85,12 @@ export const ENDPOINT_POLICIES: readonly RoutePolicy[] = [
     pathPattern: '/v1/audit',
     requiredRole: 'AUDITOR',
     requiredScope: 'api/audit.read',
-    description: 'Consulta de eventos crticos de auditora (extensin HU-10)'
+    description: 'Consulta de eventos críticos de auditoría (extensión HU-10)'
   }
 ] as const;
 
 /**
- * Comprueba si una ruta concreta coincide con un patrn parametrizado (ej. /v1/projects/{projectId}).
+ * Comprueba si una ruta concreta coincide con un patrón parametrizado (ej. /v1/projects/{projectId}).
  */
 export function matchesPath(pattern: string, path: string): boolean {
   // Normalizar barras al inicio y fin
@@ -110,20 +110,53 @@ export function matchesPath(pattern: string, path: string): boolean {
 }
 
 /**
- * Busca la poltica correspondiente a un mtodo y ruta dados.
+ * Normaliza una ruta removiendo el prefijo de stage de API Gateway (ej. /academic/v1/projects -> /v1/projects).
  */
-export function findPolicy(method: string, path: string): RoutePolicy | undefined {
-  const upperMethod = method.toUpperCase();
-  return ENDPOINT_POLICIES.find(
-    policy => policy.method === upperMethod && matchesPath(policy.pathPattern, path)
-  );
+export function normalizePath(path: string, stage?: string): string {
+  let clean = (path || '').trim();
+  if (stage && stage !== '$default') {
+    const stagePrefix = `/${stage.replace(/^\/+|\/+$/g, '')}`;
+    if (clean === stagePrefix) {
+      clean = '/';
+    } else if (clean.startsWith(`${stagePrefix}/`)) {
+      clean = clean.slice(stagePrefix.length);
+    }
+  } else if (clean.startsWith('/academic/')) {
+    clean = clean.slice('/academic'.length);
+  }
+  return clean;
 }
 
 /**
- * Busca una poltica a partir del routeKey de API Gateway HTTP API v2
+ * Busca la política correspondiente a un método y ruta dados, con soporte de normalización de stage.
+ */
+export function findPolicy(method: string, path: string, stage?: string): RoutePolicy | undefined {
+  const upperMethod = method.toUpperCase();
+  const normalizedPath = normalizePath(path, stage);
+
+  const matched = ENDPOINT_POLICIES.find(
+    policy => policy.method === upperMethod && matchesPath(policy.pathPattern, normalizedPath)
+  );
+
+  if (matched) {
+    return matched;
+  }
+
+  // Tolerancia para discrepancia conocida de template.yaml (PublishProject usa POST en lugar de PATCH)
+  if (upperMethod === 'POST' && matchesPath('/v1/projects/{projectId}/publish', normalizedPath)) {
+    return ENDPOINT_POLICIES.find(
+      p => p.method === 'PATCH' && p.pathPattern === '/v1/projects/{projectId}/publish'
+    );
+  }
+
+  return undefined;
+}
+
+/**
+ * Busca una política a partir del routeKey de API Gateway HTTP API v2
  * (ej. "POST /v1/donations", "POST /v1/donations/{donationId}/simulate" o "POST /v1/donations/d-123/simulate").
  */
-export function findPolicyByRouteKey(routeKey: string): RoutePolicy | undefined {
+export function findPolicyByRouteKey(routeKey: string, stage?: string): RoutePolicy | undefined {
   if (!routeKey || typeof routeKey !== 'string') {
     return undefined;
   }
@@ -133,19 +166,19 @@ export function findPolicyByRouteKey(routeKey: string): RoutePolicy | undefined 
   }
   const method = parts[0];
   const path = parts.slice(1).join(' ');
-  return findPolicy(method, path);
+  return findPolicy(method, path, stage);
 }
 
 /**
- * Evala la poltica para una solicitud.
- * Si la ruta no est registrada en la matriz, lanza AuthzError 403 (Deny by default).
+ * Evalúa la política para una solicitud.
+ * Si la ruta no está registrada en la matriz, lanza AuthzError 403 (Deny by default).
  * Valida scope, rol y restricciones de entorno (stage academic).
  *
- * @param method Mtodo HTTP
+ * @param method Método HTTP
  * @param path Ruta solicitada
  * @param principal Identidad verificada (requerida para rutas protegidas)
- * @param currentStage Entorno de ejecucin (opcional, ej. 'academic')
- * @returns La poltica validada que autoriz la solicitud
+ * @param currentStage Entorno de ejecución (opcional, ej. 'academic')
+ * @returns La política validada que autorizó la solicitud
  */
 export function assertRoutePolicy(
   method: string,
@@ -153,27 +186,27 @@ export function assertRoutePolicy(
   principal?: Principal,
   currentStage?: string
 ): RoutePolicy {
-  const policy = findPolicy(method, path);
+  const policy = findPolicy(method, path, currentStage);
 
   if (!policy) {
     throw new AuthzError(
       403,
       'FORBIDDEN',
-      `Acceso denegado: ruta no permitida por poltica (${method} ${path})`
+      `Acceso denegado: ruta no permitida por política (${method} ${path})`
     );
   }
 
-  // Rutas pblicas no requieren autenticacin
+  // Rutas públicas no requieren autenticación
   if (policy.isPublic) {
     return policy;
   }
 
-  // Rutas protegidas requieren Principal vlido
+  // Rutas protegidas requieren Principal válido
   if (!principal) {
-    throw new AuthzError(401, 'UNAUTHORIZED', 'Autenticacin requerida para este endpoint');
+    throw new AuthzError(401, 'UNAUTHORIZED', 'Autenticación requerida para este endpoint');
   }
 
-  // Validacin de restriccin de stage (ej. solo stage academic para /simulate)
+  // Validación de restricción de stage (ej. solo stage academic para /simulate)
   if (policy.stageRestriction) {
     const stage = currentStage || process.env.APP_ENV || process.env.STAGE;
     if (stage !== policy.stageRestriction) {
@@ -185,12 +218,12 @@ export function assertRoutePolicy(
     }
   }
 
-  // Validacin de scope OAuth2
+  // Validación de scope OAuth2
   if (policy.requiredScope) {
     requireScope(principal, policy.requiredScope);
   }
 
-  // Validacin de Rol RBAC
+  // Validación de Rol RBAC
   if (policy.requiredRole) {
     requireRole(principal, policy.requiredRole);
   }

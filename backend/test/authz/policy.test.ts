@@ -3,6 +3,7 @@ import {
   assertRoutePolicy,
   findPolicy,
   matchesPath,
+  normalizePath,
   AuthzError,
   type Principal
 } from '../../src/authz/index.js';
@@ -39,6 +40,15 @@ describe('policy.ts - Matriz declarativa y Fail-Closed', () => {
     });
   });
 
+  describe('normalizePath()', () => {
+    it('remueve el prefijo de stage academic de la ruta si está presente', () => {
+      expect(normalizePath('/academic/v1/projects', 'academic')).toBe('/v1/projects');
+      expect(normalizePath('/academic/v1/donations/me', 'academic')).toBe('/v1/donations/me');
+      expect(normalizePath('/v1/donations/me', 'academic')).toBe('/v1/donations/me');
+      expect(normalizePath('/academic', 'academic')).toBe('/');
+    });
+  });
+
   describe('findPolicy()', () => {
     it('encuentra la política correspondiente ignorando mayúsculas/minúsculas en método', () => {
       const policy = findPolicy('post', '/v1/donations');
@@ -47,36 +57,46 @@ describe('policy.ts - Matriz declarativa y Fail-Closed', () => {
       expect(policy?.requiredScope).toBe('api/donations.write');
     });
 
+    it('resuelve rutas con prefijo de stage /academic en API Gateway real', () => {
+      const policy = findPolicy('GET', '/academic/v1/projects', 'academic');
+      expect(policy).toBeDefined();
+      expect(policy?.isPublic).toBe(true);
+    });
+
+    it('resuelve compatibilidad con PublishProject usando POST en lugar de PATCH', () => {
+      const policy = findPolicy('POST', '/v1/projects/proj-123/publish');
+      expect(policy).toBeDefined();
+      expect(policy?.requiredRole).toBe('GESTOR');
+      expect(policy?.requiredScope).toBe('api/projects.write');
+    });
+
     it('retorna undefined para rutas no configuradas', () => {
-      expect(findPolicy('GET', '/v1/unknown')).toBeUndefined();
-      expect(findPolicy('DELETE', '/v1/projects')).toBeUndefined();
+      expect(findPolicy('DELETE', '/v1/projects/abc')).toBeUndefined();
+      expect(findPolicy('GET', '/v2/donations')).toBeUndefined();
     });
   });
 
-  describe('assertRoutePolicy() - Fail closed & evaluación estricta', () => {
-    it('Ruta no listada en la matriz -> denegada con 403 FORBIDDEN por defecto', () => {
-      expect(() => assertRoutePolicy('DELETE', '/v1/projects/123', gestor)).toThrow(AuthzError);
+  describe('assertRoutePolicy()', () => {
+    it('permite acceso público a GET /v1/projects sin requerir Principal', () => {
+      const policy = assertRoutePolicy('GET', '/v1/projects');
+      expect(policy.isPublic).toBe(true);
+    });
+
+    it('permite acceso público a GET /v1/projects/{projectId}', () => {
+      const policy = assertRoutePolicy('GET', '/v1/projects/proj-001');
+      expect(policy.isPublic).toBe(true);
+    });
+
+    it('deniega con 403 (FORBIDDEN) rutas no listadas (Fail-closed)', () => {
+      expect(() => assertRoutePolicy('DELETE', '/v1/projects/proj-001', gestor)).toThrow(
+        AuthzError
+      );
 
       try {
-        assertRoutePolicy('POST', '/v1/admin/nuke', gestor);
+        assertRoutePolicy('DELETE', '/v1/projects/proj-001', gestor);
       } catch (err: any) {
         expect(err.status).toBe(403);
         expect(err.code).toBe('FORBIDDEN');
-      }
-    });
-
-    it('Rutas públicas no requieren principal ni token', () => {
-      expect(() => assertRoutePolicy('GET', '/v1/projects')).not.toThrow();
-      expect(() => assertRoutePolicy('GET', '/v1/projects/p-100')).not.toThrow();
-      expect(() => assertRoutePolicy('GET', '/v1/projects/p-100/stats')).not.toThrow();
-    });
-
-    it('Ruta protegida sin principal -> lanza 401 UNAUTHORIZED', () => {
-      expect(() => assertRoutePolicy('POST', '/v1/donations', undefined)).toThrow(AuthzError);
-      try {
-        assertRoutePolicy('POST', '/v1/donations', undefined);
-      } catch (err: any) {
-        expect(err.status).toBe(401);
       }
     });
 

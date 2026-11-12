@@ -1,37 +1,35 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, TransactWriteCommand } from "@aws-sdk/lib-dynamodb";
 import { randomUUID, createHash } from "crypto";
+import { withAuthz, type Principal } from "../authz/index.js";
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
 
-export const handler = async (event: any) => {
-  // 1. Autorización y extracción de usuario
-  const claims = event.requestContext?.authorizer?.jwt?.claims;
-  const groups = claims?.["cognito:groups"];
-  const roles = Array.isArray(groups) ? groups : typeof groups === "string" ? groups.split(/[,\s]+/).filter(Boolean) : [];
-  const donorSub = claims?.sub;
-
-  if (!donorSub) {
-    return { statusCode: 401, body: JSON.stringify({ code: "UNAUTHORIZED", message: "Autenticación requerida" }) };
-  }
-
-  if (!roles.includes("DONANTE")) {
-    return { statusCode: 403, body: JSON.stringify({ code: "FORBIDDEN", message: "Permiso insuficiente" }) };
-  }
+export const handler = withAuthz(async (event: any, principal: Principal) => {
+  // 1. Autorización y extracción de usuario verificada por withAuthz (CA-04.3, CA-05.3)
+  const donorSub = principal.sub;
 
   // 2. Extracción y validación de entrada
   const idempotencyKey = event.headers?.["idempotency-key"] || event.headers?.["Idempotency-Key"];
-  const body = event.body ? JSON.parse(event.body) : {};
+  const body = event.body ? (typeof event.body === 'string' ? JSON.parse(event.body) : event.body) : {};
   const { projectId, amountCents } = body;
 
   if (!idempotencyKey) {
-    return { statusCode: 400, body: JSON.stringify({ code: "BAD_REQUEST", message: "Falta cabecera Idempotency-Key" }) };
+    return {
+      statusCode: 400,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: "BAD_REQUEST", message: "Falta cabecera Idempotency-Key" })
+    };
   }
 
   // Validación de montos (S/ 1.00 a S/ 1,000.00 en centavos)
   if (!projectId || typeof amountCents !== "number" || amountCents < 100 || amountCents > 100000 || !Number.isInteger(amountCents)) {
-    return { statusCode: 400, body: JSON.stringify({ code: "BAD_REQUEST", message: "Datos de donación inválidos" }) };
+    return {
+      statusCode: 400,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: "BAD_REQUEST", message: "Datos de donación inválidos" })
+    };
   }
 
   const donationId = randomUUID();
@@ -59,7 +57,7 @@ export const handler = async (event: any) => {
         {
           // B) Registrar la llave de idempotencia (falla si ya existe)
           Put: {
-            TableName: process.env.IDEMPOTENCY_TABLE || process.env.DONATIONS_TABLE, // Ajustar según tus variables de entorno
+            TableName: process.env.IDEMPOTENCY_TABLE || process.env.DONATIONS_TABLE,
             Item: {
               pk: idempotencyPk,
               payloadHash: payloadHash,
@@ -101,22 +99,35 @@ export const handler = async (event: any) => {
     };
 
   } catch (error: any) {
-    console.error("Error en transacción:", error);
+    console.error("Error en TransactWrite:", error);
 
+    // Manejo de Idempotencia y validaciones de estado en DynamoDB
     if (error.name === "TransactionCanceledException") {
-      // Razones típicas: El proyecto no es válido o la clave de idempotencia ya se usó
-      return {
-        statusCode: 409,
-        body: JSON.stringify({
-          code: "CONFLICT",
-          message: "El proyecto no está disponible o la solicitud está duplicada"
-        })
-      };
+      const cancellationReasons = error.CancellationReasons || [];
+      
+      // Si falló el ConditionCheck del proyecto (índice 0)
+      if (cancellationReasons[0]?.Code === "ConditionalCheckFailed") {
+        return {
+          statusCode: 409,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: "CONFLICT", message: "El proyecto no existe o no se encuentra PUBLICADO" })
+        };
+      }
+
+      // Si falló el Put de idempotencia porque la llave ya existía (índice 1)
+      if (cancellationReasons[1]?.Code === "ConditionalCheckFailed") {
+        return {
+          statusCode: 409,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: "CONFLICT", message: "La clave de idempotencia ya fue procesada" })
+        };
+      }
     }
 
     return {
       statusCode: 500,
-      body: JSON.stringify({ code: "INTERNAL_SERVER_ERROR", message: "Error interno del servidor" })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: "INTERNAL_SERVER_ERROR", message: "Error interno procesando donación" })
     };
   }
-};
+});

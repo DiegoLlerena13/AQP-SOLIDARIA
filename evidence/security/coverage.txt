@@ -6,64 +6,39 @@
 [1m[30m[46m RUN [49m[39m[22m [36mv5.1.0 [39m[90mE:/TAIS/AQP-SOLIDARIA/backend[39m
       [2mCoverage enabled with [22m[33mv8[39m
 
-[90mstderr[2m | test/authz/withAuthz.test.ts[2m > [22m[2mwithAuthz.ts - Wrapper HOF para Lambdas[2m > [22m[2m[CA-03.2] sin claims o sin sub -> responde HTTP 401 con formato uniforme
-[22m[39m{"level":"WARN","event":"AUTHZ_REJECTED","code":"UNAUTHORIZED","statusCode":401,"requestId":"req-401-test","route":"POST /v1/donations","durationMs":1}
+ [32mÔ£ô[39m test/authz/principal.test.ts [2m([22m[2m22 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32mÔ£ô[39m test/authz/ownership.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32mÔ£ô[39m test/authz/policy.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32mÔ£ô[39m test/authz/contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32mÔ£ô[39m test/authz/rbac.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32mÔ£ô[39m test/authz/withAuthz.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+ [32mÔ£ô[39m test/authz/handlers.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 17[2mms[22m[39m
 
-[90mstderr[2m | test/authz/withAuthz.test.ts[2m > [22m[2mwithAuthz.ts - Wrapper HOF para Lambdas[2m > [22m[2mscope insuficiente -> responde HTTP 403 FORBIDDEN
-[22m[39m{"level":"WARN","event":"AUTHZ_REJECTED","code":"FORBIDDEN","statusCode":403,"requestId":"req-scope-fail","route":"POST /v1/donations","durationMs":1}
-
-[90mstderr[2m | test/authz/withAuthz.test.ts[2m > [22m[2mwithAuthz.ts - Wrapper HOF para Lambdas[2m > [22m[2m[T03][CA-04.1] DONANTE intenta acción de GESTOR -> responde HTTP 403
-[22m[39m{"level":"WARN","event":"AUTHZ_REJECTED","code":"FORBIDDEN","statusCode":403,"requestId":"req-t03","route":"POST /v1/projects","durationMs":0}
-
-[90mstderr[2m | test/authz/withAuthz.test.ts[2m > [22m[2mwithAuthz.ts - Wrapper HOF para Lambdas[2m > [22m[2m[T12][CA-04.2] GESTOR intenta GET /v1/donations/me -> responde HTTP 403
-[22m[39m{"level":"WARN","event":"AUTHZ_REJECTED","code":"FORBIDDEN","statusCode":403,"requestId":"req-t12","route":"GET /v1/donations/me","durationMs":0}
-
-[90mstderr[2m | test/authz/withAuthz.test.ts[2m > [22m[2mwithAuthz.ts - Wrapper HOF para Lambdas[2m > [22m[2mLa respuesta de error nunca incluye stack, tokens ni claims (Fail-closed & Sanitize)
-[22m[39m{"level":"ERROR","event":"UNEXPECTED_HANDLER_ERROR","code":"INTERNAL_SERVER_ERROR","requestId":"req-err-leak","route":"POST /v1/donations","durationMs":0}
-
-[90mstderr[2m | test/authz/withAuthz.test.ts[2m > [22m[2mwithAuthz.ts - Wrapper HOF para Lambdas[2m > [22m[2mIntegración con ENDPOINT_POLICIES en tiempo de ejecución[2m > [22m[2mRuta no listada en ENDPOINT_POLICIES -> responde 403 FORBIDDEN (Fail-closed)
-[22m[39m{"level":"WARN","event":"AUTHZ_REJECTED","code":"FORBIDDEN","statusCode":403,"requestId":"req-unlisted","route":"DELETE /v1/projects/123","durationMs":0}
-
-[90mstderr[2m | test/authz/withAuthz.test.ts[2m > [22m[2mwithAuthz.ts - Wrapper HOF para Lambdas[2m > [22m[2mIntegración con ENDPOINT_POLICIES en tiempo de ejecución[2m > [22m[2mRuta listada aplica sus scopes y roles sin necesidad de opciones explícitas: withAuthz(handler)
-[22m[39m{"level":"WARN","event":"AUTHZ_REJECTED","code":"FORBIDDEN","statusCode":403,"requestId":"req-test-1234","route":"POST /v1/donations","durationMs":0}
-
-[90mstderr[2m | test/authz/withAuthz.test.ts[2m > [22m[2mwithAuthz.ts - Wrapper HOF para Lambdas[2m > [22m[2mIntegración con ENDPOINT_POLICIES en tiempo de ejecución[2m > [22m[2mOpciones explícitas no pueden relajar la matriz (nunca relajan la política)
-[22m[39m{"level":"WARN","event":"AUTHZ_REJECTED","code":"FORBIDDEN","statusCode":403,"requestId":"req-test-1234","route":"POST /v1/projects","durationMs":0}
-
-[90mstderr[2m | test/authz/withAuthz.test.ts[2m > [22m[2mwithAuthz.ts - Wrapper HOF para Lambdas[2m > [22m[2mIntegración con ENDPOINT_POLICIES en tiempo de ejecución[2m > [22m[2mOpciones explícitas pueden agregar requisitos adicionales (defensa en profundidad)
-[22m[39m{"level":"WARN","event":"AUTHZ_REJECTED","code":"FORBIDDEN","statusCode":403,"requestId":"req-test-1234","route":"POST /v1/donations","durationMs":1}
-
-[90mstderr[2m | test/authz/withAuthz.test.ts[2m > [22m[2mwithAuthz.ts - Wrapper HOF para Lambdas[2m > [22m[2mIntegración con ENDPOINT_POLICIES en tiempo de ejecución[2m > [22m[2mRuta pública envuelta en withAuthz -> denegada (403) por configuración errónea
-[22m[39m{"level":"WARN","event":"AUTHZ_REJECTED","code":"FORBIDDEN","statusCode":403,"requestId":"req-test-1234","route":"GET /v1/projects","durationMs":0}
-
- [32m✓[39m test/authz/contract.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 17[2mms[22m[39m
-[90mstderr[2m | test/authz/withAuthz.test.ts[2m > [22m[2mwithAuthz.ts - Wrapper HOF para Lambdas[2m > [22m[2mIntegración con ENDPOINT_POLICIES en tiempo de ejecución[2m > [22m[2mPOST /v1/donations/{donationId}/simulate fuera de stage academic -> denegada (403)
-[22m[39m{"level":"WARN","event":"AUTHZ_REJECTED","code":"FORBIDDEN","statusCode":403,"requestId":"req-test-1234","route":"POST /v1/donations/{donationId}/simulate","durationMs":0}
-
- [32m✓[39m test/authz/ownership.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 10[2mms[22m[39m
- [32m✓[39m test/authz/policy.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 20[2mms[22m[39m
- [32m✓[39m test/authz/rbac.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 17[2mms[22m[39m
- [32m✓[39m test/authz/principal.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 22[2mms[22m[39m
- [32m✓[39m test/authz/withAuthz.test.ts [2m([22m[2m13 tests[22m[2m)[22m[32m 30[2mms[22m[39m
-
-[2m Test Files [22m [1m[32m6 passed[39m[22m[90m (6)[39m
-[2m      Tests [22m [1m[32m61 passed[39m[22m[90m (61)[39m
-[2m   Start at [22m 02:29:08
-[2m   Duration [22m 518ms[2m (import 43%, worker 27%, transform 17%, tests 13%)[22m
+[2m Test Files [22m [1m[32m7 passed[39m[22m[90m (7)[39m
+[2m      Tests [22m [1m[32m79 passed[39m[22m[90m (79)[39m
+[2m   Start at [22m 16:49:22
+[2m   Duration [22m 630ms[2m (import 43%, worker 25%, transform 20%, tests 11%)[22m
 
 [34m % [39m[2mCoverage report from [22m[33mv8[39m
 ----------------|---------|----------|---------|---------|-------------------
 File            | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
 ----------------|---------|----------|---------|---------|-------------------
-All files       |   98.26 |    86.11 |     100 |   98.21 |                   
- src/authz      |   98.08 |    84.56 |     100 |   98.02 |                   
+All files       |   87.83 |    76.61 |   94.59 |   87.58 |                   
+ src/authz      |   95.05 |    83.78 |   93.33 |   94.91 |                   
   errors.ts     |     100 |      100 |     100 |     100 |                   
   index.ts      |       0 |        0 |       0 |       0 |                   
   ownership.ts  |     100 |      100 |     100 |     100 |                   
-  policy.ts     |   94.28 |    77.41 |     100 |   94.28 | 128,132           
-  principal.ts  |   98.48 |    94.64 |     100 |   98.38 | 122               
+  policy.ts     |    92.3 |    80.39 |     100 |    92.3 | 125,161,165,206   
+  principal.ts  |   94.59 |    93.05 |   84.61 |   94.28 | 109-113,122       
   rbac.ts       |     100 |      100 |     100 |     100 |                   
-  withAuthz.ts  |     100 |    69.04 |     100 |     100 | 84-96,122,146     
+  withAuthz.ts  |   96.96 |    64.28 |     100 |   96.96 | 150               
+ src/donations  |   71.64 |    43.75 |     100 |   71.21 |                   
+  create.ts     |   64.28 |       44 |     100 |   64.28 | 19,28,102-127     
+  me.ts         |   83.33 |       50 |     100 |   81.81 | 43-44             
+  simulate.ts   |   74.07 |    42.85 |     100 |   74.07 | 18,77-90,109-120  
+ src/projects   |   74.19 |    57.14 |     100 |   74.19 |                   
+  create.ts     |   82.35 |       70 |     100 |   82.35 | 18,59-60          
+  publish.ts    |   64.28 |       25 |     100 |   64.28 | 15,47-58          
  test/helpers   |     100 |    93.54 |     100 |     100 |                   
   mockEvents.ts |     100 |    93.54 |     100 |     100 | 36,90             
 ----------------|---------|----------|---------|---------|-------------------

@@ -2,19 +2,30 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
 import { randomUUID } from "crypto";
-import { withAuthz } from "../authz/withAuthz.js";
+import { withAuthz, type Principal } from "../authz/index.js";
 
 const client = new DynamoDBClient({});
 const docClient = DynamoDBDocumentClient.from(client);
 
-export const handler = withAuthz(async (event, principal) => {
-  let body: any;
+export const handler = withAuthz(async (event: any, principal: Principal) => {
+  // La política centralizada exige:
+  // - Token de acceso válido
+  // - Rol GESTOR
+  // - Scope api/projects.write
+
+  // 1. Validar el cuerpo de la solicitud
+  let body: unknown;
 
   try {
-    body = event.body ? JSON.parse(event.body) : {};
+    body = event.body
+      ? typeof event.body === "string"
+        ? JSON.parse(event.body)
+        : event.body
+      : {};
   } catch {
     return {
       statusCode: 400,
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         code: "BAD_REQUEST",
         message: "El cuerpo de la solicitud no contiene JSON válido",
@@ -22,7 +33,21 @@ export const handler = withAuthz(async (event, principal) => {
     };
   }
 
-  const { name, description, goalAmountCents } = body ?? {};
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return {
+      statusCode: 400,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        code: "BAD_REQUEST",
+        message: "El cuerpo debe ser un objeto JSON válido",
+      }),
+    };
+  }
+
+  const { name, description, goalAmountCents } = body as Record<
+    string,
+    unknown
+  >;
 
   if (
     typeof name !== "string" ||
@@ -35,6 +60,7 @@ export const handler = withAuthz(async (event, principal) => {
   ) {
     return {
       statusCode: 400,
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         code: "BAD_REQUEST",
         message: "Datos de proyecto inválidos o incompletos",
@@ -42,6 +68,7 @@ export const handler = withAuthz(async (event, principal) => {
     };
   }
 
+  // 2. Crear proyecto en estado BORRADOR
   const projectId = randomUUID();
   const now = new Date().toISOString();
 
@@ -57,6 +84,7 @@ export const handler = withAuthz(async (event, principal) => {
     updatedAt: now,
   };
 
+  // 3. Persistir con escritura condicional en DynamoDB
   try {
     await docClient.send(
       new PutCommand({
@@ -75,13 +103,14 @@ export const handler = withAuthz(async (event, principal) => {
       }),
     };
   } catch (error) {
-    console.error("Error creando proyecto:", error);
+    console.error("Error guardando proyecto:", error);
 
     return {
       statusCode: 500,
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         code: "INTERNAL_SERVER_ERROR",
-        message: "Error al crear el proyecto",
+        message: "Error interno al crear el proyecto",
       }),
     };
   }

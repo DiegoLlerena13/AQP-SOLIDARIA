@@ -1,10 +1,10 @@
 /**
  * @file withAuthz.ts
  * @description Wrapper de orden superior (middleware) para handlers AWS Lambda.
- * Aplica la Capa 2 de autorizacin Zero Trust usando ENDPOINT_POLICIES como fuente de verdad:
- * 1. Extrae routeKey del evento HTTP API v2 y busca la poltica en la matriz declarativa (Fail-Closed).
- * 2. Si la ruta es pblica, deniega (403) por configuracin errnea (withAuthz solo aplica a rutas protegidas).
- * 3. Aplica restriccin de stage (ej. simulate exclusivo para 'academic' usando event.requestContext.stage).
+ * Aplica la Capa 2 de autorización Zero Trust usando ENDPOINT_POLICIES como fuente de verdad:
+ * 1. Extrae routeKey del evento HTTP API v2 y busca la política en la matriz declarativa (Fail-Closed).
+ * 2. Si la ruta es pública, deniega (403) por configuración errónea (withAuthz solo aplica a rutas protegidas).
+ * 3. Aplica restricción de stage (ej. simulate exclusivo para 'academic' usando event.requestContext.stage).
  * 4. Extrae y valida la identidad (Principal) desde claims verificados (getPrincipal).
  * 5. Verifica los scopes exigidos por la matriz y los opcionales adicionales (nunca relajan la matriz).
  * 6. Verifica los roles RBAC requeridos por la matriz y los opcionales adicionales.
@@ -86,6 +86,7 @@ export function withAuthz<
   return async (event: TEvent): Promise<UniformResponse | TResult> => {
     const startTime = Date.now();
     const requestId = (event as any)?.requestContext?.requestId || 'unknown';
+    const stage = (event as any)?.requestContext?.stage || process.env.APP_ENV;
 
     // Resolver routeKey del evento HTTP API Payload v2
     const routeKey: string =
@@ -97,8 +98,8 @@ export function withAuthz<
         : 'UNKNOWN');
 
     try {
-      // 1. Buscar la poltica en la matriz declarativa (Fail-Closed)
-      const policy = findPolicyByRouteKey(routeKey);
+      // 1. Buscar la política en la matriz declarativa (Fail-Closed) considerando el stage
+      const policy = findPolicyByRouteKey(routeKey, stage);
 
       if (!policy) {
         throw new AuthzError(
@@ -117,9 +118,8 @@ export function withAuthz<
         );
       }
 
-      // 3. Restriccin de entorno/stage (ej. /simulate exclusivo para 'academic')
+      // 3. Restricción de entorno/stage (ej. /simulate exclusivo para 'academic')
       if (policy.stageRestriction) {
-        const stage = (event as any)?.requestContext?.stage || process.env.APP_ENV;
         if (stage !== policy.stageRestriction) {
           throw new AuthzError(
             403,
@@ -132,7 +132,7 @@ export function withAuthz<
       // 4. Extraer Principal de los claims verificados por el autorizador
       const principal = getPrincipal(event);
 
-      // 5. Validar scopes (los de la matriz son obligatorios; las opciones explcitas agregan requisitos)
+      // 5. Validar scopes (los de la matriz son obligatorios; las opciones explícitas agregan requisitos)
       if (policy.requiredScope) {
         requireScope(principal, policy.requiredScope);
       }
@@ -142,7 +142,7 @@ export function withAuthz<
         }
       }
 
-      // 6. Validar roles RBAC (los de la matriz son obligatorios; las opciones explcitas agregan requisitos)
+      // 6. Validar roles RBAC (los de la matriz son obligatorios; las opciones explícitas agregan requisitos)
       if (policy.requiredRole) {
         requireRole(principal, policy.requiredRole);
       }
@@ -150,12 +150,12 @@ export function withAuthz<
         requireRole(principal, ...explicitOptions.roles);
       }
 
-      // 7. Delegar en la lgica de negocio pasando el principal verificado
+      // 7. Delegar en la lógica de negocio pasando el principal verificado
       return await handler(event, principal);
     } catch (error: unknown) {
       const durationMs = Date.now() - startTime;
 
-      // Registro seguro de auditora interna (sanitizado: nunca tokens, claims ni correo)
+      // Registro seguro de auditoría interna (sanitizado: nunca tokens, claims ni correo)
       if (error instanceof AuthzError) {
         console.warn(
           JSON.stringify({
