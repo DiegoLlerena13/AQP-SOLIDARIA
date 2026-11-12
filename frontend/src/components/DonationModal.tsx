@@ -62,8 +62,16 @@ export const DonationModal: React.FC<Props> = ({
         idempotencyKey
       );
 
-      setCreatedDonation(result);
-      if (onDonationCreated) onDonationCreated(result);
+      // La API real devuelve donationId y message, pero no amountCents ni status.
+      // Completamos los datos para mostrar el importe y estado inicial sin NaN.
+      const donationForUi: Donation = {
+        ...result,
+        amountCents,
+        status: result.status ?? 'PENDIENTE_SIMULACION',
+      };
+
+      setCreatedDonation(donationForUi);
+      if (onDonationCreated) onDonationCreated(donationForUi);
     } catch (err) {
       setError(err);
     } finally {
